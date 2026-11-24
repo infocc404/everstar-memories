@@ -1,38 +1,25 @@
-# EVERSTAR product roadmap
+# EVERSTAR delivery plan
 
-## Phase 1 — Experience foundation (committed)
-- Responsive celestial shell and dashboard
-- Memory creation, browsing, search and filtering
-- Timeline and future-dated capsule preview
-- Browser-local preview storage
+## Implemented in the repository
+- [x] Account registration and email/password sign-in through Supabase Auth.
+- [x] Password reset email flow and password update screen.
+- [x] Persistent per-user memory records in Postgres.
+- [x] Server-side AES-256-GCM encryption for memory payloads.
+- [x] Server-side owner checks and unlock-time enforcement before decryption.
+- [x] Private attachment bucket and short-lived signed downloads after unlock.
+- [x] Scheduled in-app notifications for capsules whose unlock time has arrived.
+- [x] Responsive memory, capsule, timeline, and notification screens.
 
-## Phase 2 — Real accounts and persistence
-- Account registration, login, logout and recovery
-- Server-side session handling and ownership checks
-- Database migrations and per-user row-level access controls
-- Encrypted-at-rest memory content and key management design
-- Cross-device sync and data export/delete
+## Still required before first real use
+- [ ] Create and select a dedicated Supabase project for EVERSTAR.
+- [ ] Apply both SQL migrations and confirm the scheduled job is active.
+- [ ] Configure server-only encryption key and allowed app origin.
+- [ ] Deploy Edge Functions and configure Auth redirect URLs.
+- [ ] Configure production SMTP and test email confirmation/password recovery.
+- [ ] Run end-to-end tests for two users, ownership isolation, locked API reads, attachment access and deletion.
+- [ ] Run Supabase security/performance advisors and fix all relevant findings.
+- [ ] Build and deploy the site; configure HTTPS and the final site URL.
+- [ ] Optional Web Push notifications for users who are not currently signed in.
 
-## Phase 3 — Time capsule integrity
-- Enforce unlock timestamps on the server, not only in the browser
-- Time-zone-aware scheduling and daylight-saving handling
-- Background scheduler with retry/idempotency
-- Audit events for capsule opening and delivery
-
-## Phase 4 — Media and notifications
-- Private image/file storage with expiring signed URLs
-- Optional browser push with explicit permission and subscription management
-- Email notifications and delivery preferences
-
-## Phase 5 — Quality and launch
-- Unit, integration and end-to-end tests
-- Accessibility and reduced-motion support
-- Arabic/English localization and RTL review
-- Rate limiting, security headers, monitoring and backups
-- Production deployment after secrets and hosting are configured
-
-## Non-negotiable rules
-- Never trust client-side unlock checks as authorization.
-- Never commit secrets, user exports, or push subscriptions.
-- Never silently delete or migrate original Nostalgia data.
-- Treat this frontend preview as non-production until Phase 2 and Phase 3 are complete.
+## Launch gate
+Do not enter irreplaceable or sensitive memories until the live backend is connected, the encryption key has been safely backed up, all unlock/ownership tests pass, and the production deployment has been verified.
