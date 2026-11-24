@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Aperture, Bell, CalendarDays, ChevronRight, Grid2X2, LockKeyhole, LogOut, Menu, Moon, Plus, Search, Settings2, Sparkles, Star, Sun, Trash2, X, Paperclip, Image, CheckCircle2, AlertCircle } from 'lucide-react';
 import { supabase, supabaseConfigured } from './lib/supabase';
 import { createMemory, deleteMemory, listMemories, listAttachments, uploadAttachment } from './lib/memories';
+import { isUnlockDateValid } from './lib/capsules.js';
 
 const fmt = (value) => {
   if (!value) return '—';
@@ -75,6 +76,7 @@ export default function App() {
   async function submitMemory(event) {
     event.preventDefault();
     if (!form.title.trim() || !form.body.trim()) return;
+    if (!isUnlockDateValid(form.date, form.unlock)) { setError('The opening date cannot be before the memory date.'); return; }
     setBusy(true); setError('');
     try {
       const unlockAt = new Date(form.unlock + 'T00:00:00').toISOString();
