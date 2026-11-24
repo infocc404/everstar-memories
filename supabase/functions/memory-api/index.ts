@@ -141,6 +141,14 @@ Deno.serve(async (req: Request) => {
     }
 
     if (resource === "memories" && req.method === "DELETE" && id) {
+      const { data: attachments, error: attachmentError } = await admin.from("memory_attachments")
+        .select("object_path").eq("memory_id", id).eq("user_id", user.id);
+      if (attachmentError) throw attachmentError;
+      const paths = (attachments ?? []).map((item) => item.object_path);
+      if (paths.length) {
+        const { error: storageError } = await admin.storage.from("memory-attachments").remove(paths);
+        if (storageError) throw storageError;
+      }
       const { data, error } = await admin.from("memories").delete()
         .eq("id", id).eq("user_id", user.id).select("id").maybeSingle();
       if (error) throw error;
