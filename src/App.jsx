@@ -64,6 +64,17 @@ export default function App() {
     }
   }
   useEffect(() => { if (session) refresh(); else { setMemories([]); setNotifications([]); } }, [session?.user?.id]);
+  useEffect(() => {
+    if (!session?.user?.id || !supabase) return;
+    const channel = supabase.channel('everstar-sync-' + session.user.id)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'memories', filter: 'owner_id=eq.' + session.user.id }, () => refresh())
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + session.user.id }, () => {
+        refresh();
+        setToast('A time capsule notification has arrived.');
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [session?.user?.id]);
 
   const locked = memories.filter((m) => m.isLocked);
   const ready = memories.filter((m) => !m.isLocked);
