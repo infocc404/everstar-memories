@@ -79,8 +79,8 @@ export default function App() {
     if (!isUnlockDateValid(form.date, form.unlock)) { setError('The opening date cannot be before the memory date.'); return; }
     setBusy(true); setError('');
     try {
-      const unlockAt = new Date(form.unlock + 'T00:00:00').toISOString();
-      const result = await createMemory({ title: form.title, body: form.body, date: form.date, unlockAt, unlockDate: form.unlock, mood: form.mood, color: form.color });
+      const timezoneOffsetMinutes = new Date(form.unlock + 'T00:00:00').getTimezoneOffset();
+      const result = await createMemory({ title: form.title, body: form.body, date: form.date, unlockDate: form.unlock, timezoneOffsetMinutes, mood: form.mood, color: form.color });
       const id = result.memory.id;
       let uploadFailures = 0;
       for (const file of form.files) {
