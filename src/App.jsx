@@ -16,6 +16,7 @@ function I18n({ lang, children }) {
  };
  return <>{translate(children)}</>;
 }
+const tx = (value) => localStorage.getItem('everstar.language') === 'ar' ? (AR_TRANSLATIONS[value] || value) : value;
 function LanguageSwitch({lang,setLang}) { return <button className="language-switch" type="button" onClick={()=>setLang(lang==='en'?'ar':'en')}>{lang==='en'?'عربي':'English'}</button>; }
 function GalaxyBackground() {
  const stars=Array.from({length:34},(_,i)=>({left:((i*37+11)%96)+'%',top:((i*61+7)%94)+'%',delay:-((i%9)*.7)+'s',duration:(5+i%6)+'s',size:(2+i%3)+'px'}));
@@ -227,19 +228,19 @@ function AuthPanel({ mode, setMode, onDone, lang, setLang }) {
   }
   return <I18n lang={lang}><div className="auth-screen"><div className="auth-orbit"><div/><div/><span>✦</span></div><form className="auth-card" onSubmit={submit}><div className="auth-tools"><LanguageSwitch lang={lang} setLang={setLang}/></div><div className="auth-brand"><Aperture size={34}/><span>EVERSTAR<small>MEMORIES BEYOND TIME</small></span></div><div className="eyebrow">YOUR PRIVATE UNIVERSE</div><h1>{title}</h1><p>{mode === 'signup' ? 'Create an account to keep your memories safe and in sync across devices.' : mode === 'forgot' ? 'We will send you a secure link to reset your password.' : mode === 'update' ? 'Choose a strong new password for your account.' : 'Sign in to revisit the moments you chose to keep.'}</p><label>Email address<input required type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" disabled={mode === 'update'}/></label>{mode !== 'forgot' && <label>{mode === 'update' ? 'New password' : 'Password'}<input required type="password" minLength={8} autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters"/></label>}{(mode === 'signup' || mode === 'update') && <label>Confirm password<input required type="password" minLength={8} autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="Repeat your password"/></label>}{error && <div className="auth-error"><AlertCircle size={15}/>{error}</div>}{message && <div className="auth-success"><CheckCircle2 size={15}/>{message}</div>}<button className="gold-btn full" type="submit" disabled={busy}>{busy ? 'Please wait…' : mode === 'signup' ? 'Create account' : mode === 'forgot' ? 'Send reset link' : mode === 'update' ? 'Save new password' : 'Sign in'} <ChevronRight size={16}/></button><div className="auth-links">{mode === 'login' && <><button type="button" onClick={() => setMode('forgot')}>Forgot password?</button><span>New here? <button type="button" onClick={() => { setMode('signup'); setMessage(''); setError(''); }}>Create account</button></span></>}{mode === 'signup' && <span>Already have an account? <button type="button" onClick={() => { setMode('login'); setMessage(''); setError(''); }}>Sign in</button></span>}{mode === 'forgot' && <button type="button" onClick={() => { setMode('login'); setMessage(''); setError(''); }}>Back to sign in</button>}{mode === 'update' && <button type="button" onClick={onDone}>Back to sign in</button>}</div></form></div></I18n>;
 }
-function Stat({ icon, value, label, variant = '' }) { return <div className="stat"><span className={'stat-icon ' + variant}>{icon}</span><div><strong>{value}</strong><small>{label}</small></div></div>; }
-function PageHead({ eyebrow, title, desc, action }) { return <div className="page-head"><div><div className="eyebrow">{eyebrow}</div><h1>{title}</h1><p>{desc}</p></div>{action && <button className="gold-btn" onClick={action}><Plus size={16}/> New memory</button>}</div>; }
+function Stat({ icon, value, label, variant = '' }) { return <div className="stat"><span className={'stat-icon ' + variant}>{icon}</span><div><strong>{value}</strong><small>{tx(label)}</small></div></div>; }
+function PageHead({ eyebrow, title, desc, action }) { return <div className="page-head"><div><div className="eyebrow">{tx(eyebrow)}</div><h1>{tx(title)}</h1><p>{tx(desc)}</p></div>{action && <button className="gold-btn" onClick={action}><Plus size={16}/> {tx('New memory')}</button>}</div>; }
 function Toolbar({ search, setSearch, filter, setFilter }) {
   return (
     <div className="toolbar">
       <div className="search">
         <Search size={16} />
-        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Find a memory…" />
+        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={tx('Find a memory…')} />
       </div>
       <div className="filters">
         {['all', 'open', 'locked'].map((f) => (
           <button key={f} className={filter === f ? 'selected' : ''} onClick={() => setFilter(f)}>
-            {f === 'all' ? 'All' : f === 'open' ? 'Unlocked' : 'Locked'}
+            {tx(f === 'all' ? 'All' : f === 'open' ? 'Unlocked' : 'Locked')}
           </button>
         ))}
       </div>
@@ -248,6 +249,6 @@ function Toolbar({ search, setSearch, filter, setFilter }) {
 }
 function MemoryCard({ memory, index, onClick }) {
   const locked = memory.isLocked;
-  return <button className="memory-card" onClick={onClick}><div className={'card-art art-' + (index % 3)}><div className="tiny-stars">✦　·　✧　　·　✦</div><span className="memory-star" style={{ color: memory.color || '#e6bd79' }}><Star size={21} fill="currentColor"/></span><small>{fmt(memory.date)}</small>{locked && <i><LockKeyhole size={11}/> SEALED</i>}</div><div className="card-body"><small>{locked ? 'TIME CAPSULE' : (memory.mood || 'MEMORY').toUpperCase()}</small><h3>{locked ? 'Sealed memory' : memory.title}</h3><p>{locked ? 'A little universe waiting for the right time.' : memory.body}</p><div>{locked ? 'Opens ' + fmt(memory.unlockAt) : 'Open memory'} <span>{locked ? <LockKeyhole size={13}/> : <ChevronRight size={15}/>}</span></div></div></button>;
+  return <button className="memory-card" onClick={onClick}><div className={'card-art art-' + (index % 3)}><div className="tiny-stars">✦　·　✧　　·　✦</div><span className="memory-star" style={{ color: memory.color || '#e6bd79' }}><Star size={21} fill="currentColor"/></span><small>{fmt(memory.date)}</small>{locked && <i><LockKeyhole size={11}/> SEALED</i>}</div><div className="card-body"><small>{tx(locked ? 'TIME CAPSULE' : (memory.mood || 'MEMORY').toUpperCase())}</small><h3>{locked ? tx('Sealed memory') : memory.title}</h3><p>{locked ? tx('A little universe waiting for the right time.') : memory.body}</p><div>{locked ? tx('Opens') + ' ' + fmt(memory.unlockAt) : tx('Open memory')} <span>{locked ? <LockKeyhole size={13}/> : <ChevronRight size={15}/>}</span></div></div></button>;
 }
-function Empty({ title, text, onClick }) { return <div className="empty"><Star size={25}/><h3>{title}</h3><p>{text}</p><button className="outline-btn" onClick={onClick}><Plus size={15}/> Create a memory</button></div>; }
+function Empty({ title, text, onClick }) { return <div className="empty"><Star size={25}/><h3>{tx(title)}</h3><p>{tx(text)}</p><button className="outline-btn" onClick={onClick}><Plus size={15}/> {tx('Create a memory')}</button></div>; }
