@@ -1,1 +1,0 @@
-create index if not exists memory_attachments_memory_id_idx on public.memory_attachments(memory_id);
