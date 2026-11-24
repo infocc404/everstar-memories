@@ -94,7 +94,13 @@ Deno.serve(async (req: Request) => {
         .select("id,title,memory_date,mood,color,unlock_at,created_at")
         .eq("user_id", user.id).order("created_at", { ascending: false });
       if (error) throw error;
-      return json({ memories: data ?? [] }, 200, origin);
+      const now = Date.now();
+      const memories = (data ?? []).map((memory) => (
+        memory.unlock_at && new Date(memory.unlock_at).getTime() > now
+          ? { ...memory, title: "Sealed memory" }
+          : memory
+      ));
+      return json({ memories }, 200, origin);
     }
 
     if (resource === "memories" && req.method === "POST" && !id) {
