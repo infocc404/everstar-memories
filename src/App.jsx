@@ -207,7 +207,23 @@ function AuthPanel({ mode, setMode, onDone }) {
 }
 function Stat({ icon, value, label, variant = '' }) { return <div className="stat"><span className={'stat-icon ' + variant}>{icon}</span><div><strong>{value}</strong><small>{label}</small></div></div>; }
 function PageHead({ eyebrow, title, desc, action }) { return <div className="page-head"><div><div className="eyebrow">{eyebrow}</div><h1>{title}</h1><p>{desc}</p></div>{action && <button className="gold-btn" onClick={action}><Plus size={16}/> New memory</button>}</div>; }
-function Toolbar({ search, setSearch, filter, setFilter }) { return <div className="toolbar"><div className="search"><Search size={16}/><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Find a memory…"/></div><div className="filters">{['all','open','locked'].map((f) => <button key={f} className={filter === f ? 'selected' : ''} onClick={() => setFilter(f)}>{f === 'all' ? 'All' : f === 'open' ? 'Unlocked' : 'Locked'}</button>)</div></div>; }
+function Toolbar({ search, setSearch, filter, setFilter }) {
+  return (
+    <div className="toolbar">
+      <div className="search">
+        <Search size={16} />
+        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Find a memory…" />
+      </div>
+      <div className="filters">
+        {['all', 'open', 'locked'].map((f) => (
+          <button key={f} className={filter === f ? 'selected' : ''} onClick={() => setFilter(f)}>
+            {f === 'all' ? 'All' : f === 'open' ? 'Unlocked' : 'Locked'}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 function MemoryCard({ memory, index, onClick }) {
   const locked = memory.isLocked;
   return <button className="memory-card" onClick={onClick}><div className={'card-art art-' + (index % 3)}><div className="tiny-stars">✦　·　✧　　·　✦</div><span className="memory-star" style={{ color: memory.color || '#e6bd79' }}><Star size={21} fill="currentColor"/></span><small>{fmt(memory.date)}</small>{locked && <i><LockKeyhole size={11}/> SEALED</i>}</div><div className="card-body"><small>{locked ? 'TIME CAPSULE' : (memory.mood || 'MEMORY').toUpperCase()}</small><h3>{locked ? 'Sealed memory' : memory.title}</h3><p>{locked ? 'A little universe waiting for the right time.' : memory.body}</p><div>{locked ? 'Opens ' + fmt(memory.unlockAt) : 'Open memory'} <span>{locked ? <LockKeyhole size={13}/> : <ChevronRight size={15}/>}</span></div></div></button>;
