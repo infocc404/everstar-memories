@@ -50,3 +50,5 @@
 @media(max-width:1050px){.app[dir="rtl"] .main{margin-right:220px;}}
 @media(max-width:700px){.galaxy-field{opacity:.48}.galaxy-ring{right:-55vw;top:20vh;width:105vw;height:58vw}.galaxy-ring.ring-two{right:-38vw;top:27vh;width:95vw;height:75vw}.galaxy-ring.ring-three{right:-25vw;top:31vh;width:82vw;height:51vw}.info-grid{grid-template-columns:1fr}.info-card{min-height:0}.settings-row{padding:16px;align-items:flex-start}.app[dir="rtl"] .main{margin-right:0}.app[dir="rtl"] .sidebar{transform:translateX(100%);inset:0 0 0 auto;border-left:1px solid var(--line);border-right:0}.app[dir="rtl"] .sidebar.show{transform:translateX(0)}.app[dir="rtl"] .mobile-x{margin-left:0;margin-right:auto}.app[dir="rtl"] .quote{border:0;padding:0}}
 @media(prefers-reduced-motion:reduce){.drifting-star,.galaxy-ring{animation:none!important}}
+
+.auth-screen[dir="rtl"] .auth-card{text-align:right}.auth-screen[dir="rtl"] .auth-card label{text-align:right}.auth-screen[dir="rtl"] .auth-links{flex-direction:row-reverse}.auth-screen[dir="rtl"] .auth-error,.auth-screen[dir="rtl"] .auth-success{flex-direction:row-reverse}
