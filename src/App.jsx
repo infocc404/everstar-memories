@@ -20,7 +20,7 @@ function I18n({ lang, children }) {
 const tx = (value) => localStorage.getItem('everstar.language') === 'ar' ? (AR_TRANSLATIONS[value] || value) : value;
 function LanguageSwitch({lang,setLang}) { return <button className="language-switch" type="button" onClick={()=>setLang(lang==='en'?'ar':'en')}>{lang==='en'?'عربي':'English'}</button>; }
 function GalaxyBackground() {
- const stars=Array.from({length:34},(_,i)=>({left:((i*37+11)%96)+'%',top:((i*61+7)%94)+'%',delay:-((i%9)*.7)+'s',duration:(5+i%6)+'s',size:(2+i%3)+'px'}));
+ const stars=Array.from({length:18},(_,i)=>({left:((i*37+11)%96)+'%',top:((i*61+7)%94)+'%',delay:-((i%9)*.7)+'s',duration:(5+i%6)+'s',size:(2+i%3)+'px'}));
  return <div className="galaxy-field" aria-hidden="true"><div className="galaxy-haze"/><div className="galaxy-ring ring-one"><i/></div><div className="galaxy-ring ring-two"><i/></div><div className="galaxy-ring ring-three"><i/></div>{stars.map((star,i)=><span key={i} className="drifting-star" style={{left:star.left,top:star.top,animationDelay:star.delay,animationDuration:star.duration,width:star.size,height:star.size}}/>)}</div>;
 }
 
