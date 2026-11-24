@@ -31,7 +31,7 @@ Deno.serve(async (req: Request) => {
       if (typeof title !== "string" || !title.trim() || typeof body !== "string" || !body.trim()) return json({ error: "A title and memory text are required." }, 400);
       const happened = new Date(date + "T12:00:00Z");
       if (!Number.isFinite(happened.getTime()) || happened.toISOString().slice(0, 10) !== date ||
-          typeof unlockDate !== "string" || !/^\\d{4}-\\d{2}-\\d{2}$/.test(unlockDate) ||
+          typeof unlockDate !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(unlockDate) ||
           !Number.isInteger(timezoneOffsetMinutes) || Math.abs(timezoneOffsetMinutes) > 840) {
         return json({ error: "Please choose valid dates and a valid local time zone." }, 400);
       }
