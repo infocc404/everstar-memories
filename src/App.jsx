@@ -67,7 +67,6 @@ export default function App() {
   useEffect(() => {
     if (!session?.user?.id || !supabase) return;
     const channel = supabase.channel('everstar-sync-' + session.user.id)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'memories', filter: 'user_id=eq.' + session.user.id }, () => refresh())
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + session.user.id }, () => {
         refresh();
         setToast('A time capsule notification has arrived.');
