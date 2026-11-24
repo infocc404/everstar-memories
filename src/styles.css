@@ -101,3 +101,21 @@
 @media(max-width:1000px){.topbar-universe{flex-wrap:wrap;gap:10px;padding:12px 20px}.brand-top{order:0}.top-right{order:1;margin-left:auto}.top-navigation{order:2;flex-basis:100%;justify-content:flex-start;overflow-x:auto;padding:2px 0 5px;scrollbar-width:none}.top-navigation::-webkit-scrollbar{display:none}.top-nav-button{flex:none}.hero .orbit-art{right:-5%;opacity:.3}}
 @media(max-width:650px){.topbar-universe{position:relative;padding:12px 15px}.brand-top b{font-size:21px}.brand-top small{font-size:7px}.topbar-universe .top-right{gap:4px}.top-navigation{gap:3px}.top-nav-button{height:35px;padding:0 10px;font-size:10px}.top-nav-button svg{width:13px}.content{padding:0 17px}.hero{min-height:300px;padding:42px 0 28px}.hero h1{font-size:43px}.hero>p{max-width:95%;font-size:13px}.hero .orbit-art{right:-100px;top:45px;opacity:.16}.hero-bottom{margin-top:28px}.stats{gap:12px 6px}.stat{gap:7px}.stat-icon{width:30px;height:30px}.stat strong{font-size:18px}.stat small{font-size:8px}.constellation-sky{height:480px;border-radius:15px}.star-tooltip{width:185px}.constellation-actions{flex-wrap:wrap}.page-head{padding-top:30px}.page-head h1{font-size:36px}}
 @media(prefers-reduced-motion:reduce){.star-core{animation:none}}
+
+
+/* Performance pass: preserve the galaxy while reducing expensive paint work */
+.galaxy-field{opacity:.62;contain:paint;}
+.galaxy-haze,.nebula{filter:none!important;opacity:.55;}
+.galaxy-haze{background:radial-gradient(ellipse at center,rgba(117,102,180,.10),rgba(91,76,135,.035) 35%,transparent 69%);}
+.drifting-star:nth-of-type(n+19){display:none;}
+.galaxy-ring{box-shadow:none;will-change:transform;}
+.galaxy-ring.ring-one{animation-duration:150s;}
+.galaxy-ring.ring-two{animation-duration:190s;}
+.galaxy-ring.ring-three{animation-duration:230s;}
+.topbar-universe{backdrop-filter:none;-webkit-backdrop-filter:none;background:color-mix(in srgb,var(--bg) 96%,transparent);}
+.star-tooltip{backdrop-filter:none;-webkit-backdrop-filter:none;box-shadow:0 8px 22px #0007;}
+.constellation-sky{box-shadow:inset 0 0 48px #05091460,0 10px 26px #0002;}
+.constellation-glow{filter:none;opacity:.7;}
+.constellation-star,.top-nav-button{transition-duration:.14s;}
+@media(max-width:700px){.galaxy-field{opacity:.42}.galaxy-ring{box-shadow:none}.topbar-universe{backdrop-filter:none;-webkit-backdrop-filter:none;}}
+@media(prefers-reduced-motion:reduce){.galaxy-ring,.drifting-star,.star-core{animation:none!important;}}
