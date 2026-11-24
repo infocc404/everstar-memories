@@ -16,13 +16,13 @@ function normalizeMemory(row) {
   return {
     id: row.id,
     title: row.title,
-    date: row.created_at ?? row.createdAt ?? new Date().toISOString(),
+    date: row.memory_date ?? row.memoryDate ?? row.created_at ?? row.createdAt ?? new Date().toISOString(),
     created_at: row.created_at ?? row.createdAt ?? null,
     unlockAt,
     isLocked: Boolean(unlockAt && new Date(unlockAt).getTime() > Date.now()),
     body: row.content ?? '',
-    mood: 'Memory',
-    color: '#e6bd79',
+    mood: row.mood ?? 'Hopeful',
+    color: row.color ?? '#e6bd79',
   };
 }
 
@@ -37,7 +37,7 @@ export async function createMemory(memory) {
     : null;
   const data = await invoke('memory-api/memories', {
     method: 'POST',
-    body: { title: memory.title, content: memory.body, unlockAt },
+    body: { title: memory.title, content: memory.body, memoryDate: memory.date, mood: memory.mood, color: memory.color, unlockAt },
   });
   return { memory: normalizeMemory(data.memory) };
 }
