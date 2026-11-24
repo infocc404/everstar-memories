@@ -122,7 +122,7 @@ Deno.serve(async (req: Request) => {
       const { data, error } = await admin.from("memories").insert({
         id: memoryId, user_id: user.id, title, encrypted_content: encrypted, unlock_at: unlockDate,
         memory_date: memoryDate, mood, color,
-      }).select("id,title,unlock_at,created_at").single();
+      }).select("id,title,memory_date,mood,color,unlock_at,created_at").single();
       if (error) throw error;
       return json({ memory: data }, 201, origin);
     }
