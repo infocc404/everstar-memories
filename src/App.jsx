@@ -78,7 +78,7 @@ export default function App() {
     setBusy(true); setError('');
     try {
       const unlockAt = new Date(form.unlock + 'T00:00:00').toISOString();
-      const result = await createMemory({ title: form.title, body: form.body, date: form.date, unlockAt, mood: form.mood, color: form.color });
+      const result = await createMemory({ title: form.title, body: form.body, date: form.date, unlockAt, unlockDate: form.unlock, mood: form.mood, color: form.color });
       const id = result.memory.id;
       let uploadFailures = 0;
       for (const file of form.files) {
