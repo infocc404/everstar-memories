@@ -1,18 +1,34 @@
 # EVERSTAR — Memories Beyond Time
 
-A private, time-aware memory universe. Built as a clean successor to Nostalgia, preserving its starfield memory map and future-unlock time capsules.
+A clean successor to Nostalgia, preserving its central idea: memories represented as stars and time capsules that stay sealed until their chosen future date.
 
-## Status
+## Included in this first foundation
 
-Initial foundation. Frontend experience is being established first; production authentication, persistent database storage, secure media storage, and scheduled push delivery must be configured before real user data is used.
+- Responsive celestial dashboard and navigation
+- Memory constellation cards and timeline
+- Create, search, filter, inspect, copy, and delete memories
+- Future-dated time capsules with date-based locking in the preview
+- Light/dark appearance toggle
+- Browser-local preview persistence
 
-## Development
+## Run locally
 
 ```bash
 npm install
 npm run dev
 ```
 
-## Security
+## Production boundary
 
-Never commit `.env` files, private keys, VAPID private keys, JWT secrets, user exports, or subscription data. Use `.env.example` only as a template.
+This is a frontend foundation, **not yet a multi-user production service**. Memories currently persist in the current browser using localStorage. Authentication, cross-device sync, encrypted server-side storage, secure media uploads, account recovery, and reliable scheduled push notifications still require a backend and deployment configuration. Do not store sensitive or irreplaceable memories in this preview.
+
+Never commit `.env` files, private keys, JWT secrets, VAPID private keys, user exports, or push subscription data. Use `.env.example` only as a template.
+
+## Architecture direction
+
+- Frontend: React + Vite
+- Backend: authenticated API with strict ownership checks
+- Database: relational persistence with per-user access controls
+- Media: private object storage and expiring signed URLs
+- Time capsules: server-side unlock enforcement; never trust client-side dates
+- Notifications: server scheduler plus opt-in Web Push
