@@ -20,7 +20,7 @@ The GitHub code is not yet connected to a Supabase project. Do not enter private
 ### Required project configuration
 
 1. Create a dedicated Supabase project for EVERSTAR.
-2. Apply migrations in supabase/migrations/ in filename order.
+2. Apply migrations in supabase/migrations/ in filename order. Confirm that the public schema is enabled for the Data API; newer Supabase projects may not automatically expose newly created tables. The browser roles still receive no direct access to the private memory tables.
 3. Deploy memory-api and media-api Edge Functions with the shared files under supabase/functions/_shared/.
 4. Set the Edge Function secrets:
    - MEMORY_ENCRYPTION_KEY: base64 encoding of exactly 32 cryptographically random bytes.
