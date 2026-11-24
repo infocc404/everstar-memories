@@ -27,11 +27,21 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === "create") {
-      const { title, body, date, unlockAt, unlockDate, mood, color } = input;
+      const { title, body, date, unlockDate, timezoneOffsetMinutes, mood, color } = input;
       if (typeof title !== "string" || !title.trim() || typeof body !== "string" || !body.trim()) return json({ error: "A title and memory text are required." }, 400);
-      const unlock = new Date(unlockAt);
-      const happened = new Date(date);
-      if (!Number.isFinite(unlock.getTime()) || !Number.isFinite(happened.getTime()) || typeof unlockDate !== 'string' || unlockDate < date) return json({ error: "Please choose valid dates. The opening date cannot be before the memory date." }, 400);
+      const happened = new Date(date + "T12:00:00Z");
+      if (!Number.isFinite(happened.getTime()) || happened.toISOString().slice(0, 10) !== date ||
+          typeof unlockDate !== "string" || !/^\\d{4}-\\d{2}-\\d{2}$/.test(unlockDate) ||
+          !Number.isInteger(timezoneOffsetMinutes) || Math.abs(timezoneOffsetMinutes) > 840) {
+        return json({ error: "Please choose valid dates and a valid local time zone." }, 400);
+      }
+      const unlockCalendarDate = new Date(unlockDate + "T12:00:00Z");
+      if (!Number.isFinite(unlockCalendarDate.getTime()) || unlockCalendarDate.toISOString().slice(0, 10) !== unlockDate || unlockDate < date) {
+        return json({ error: "The opening date cannot be before the memory date." }, 400);
+      }
+      // Derive the actual opening instant on the server from the selected local calendar date.
+      const [unlockYear, unlockMonth, unlockDay] = unlockDate.split("-").map(Number);
+      const unlock = new Date(Date.UTC(unlockYear, unlockMonth - 1, unlockDay) + timezoneOffsetMinutes * 60_000);
       const encrypted_payload = await encryptPayload({ title: title.trim(), body, date, mood: String(mood || "Hopeful"), color: String(color || "#e6bd79") });
       const { data, error } = await admin.from("memories").insert({ owner_id: user.id, encrypted_payload, unlock_at: unlock.toISOString() }).select("id, unlock_at, created_at").single();
       if (error) throw error;
