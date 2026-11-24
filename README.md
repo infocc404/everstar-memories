@@ -11,7 +11,7 @@ EVERSTAR is a private memory journal and time-capsule app. Memory contents are e
 - `media-api` issues one-time upload tokens and short-lived download URLs for the private `memory-attachments` bucket.
 - `memory_attachments` stores metadata only; attachment objects remain private.
 - A `pg_cron` job creates one in-app notification per capsule when its unlock time arrives.
-- Browser clients can read only their own encrypted memory rows and notifications; direct memory writes are not granted to browser roles.
+- Browser clients have no direct access to memory rows; memory metadata and decrypted contents are returned only by authenticated Edge Functions. Users can read and mark only their own notifications.
 
 ## Supabase project
 
