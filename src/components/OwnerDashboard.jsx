@@ -115,7 +115,7 @@ export default function OwnerDashboard({ supabase, session, lang = 'en' }) {
   async function verifyMfaCode() {
     setMfaError(''); setMfaBusy(true);
     try {
-      if (!mfaFactorId || !mfaChallengeId || !/^\\d{6}$/.test(mfaCode.trim())) throw new Error('Enter the six-digit authenticator code.');
+      if (!mfaFactorId || !mfaChallengeId || !/^\d{6}$/.test(mfaCode.trim())) throw new Error('Enter the six-digit authenticator code.');
       const verified = await supabase.auth.mfa.verify({ factorId: mfaFactorId, challengeId: mfaChallengeId, code: mfaCode.trim() });
       if (verified.error) throw verified.error;
       await supabase.auth.refreshSession();
