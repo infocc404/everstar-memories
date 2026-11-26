@@ -413,3 +413,21 @@ body{background:#03122c!important}
 .orbit-art .orbit{border-color:rgba(155,211,255,.55)!important}
 .orbit-art .globe{box-shadow:0 0 55px rgba(90,170,255,.55),inset -13px -15px 25px #040713a6!important}
 @media(prefers-reduced-motion:reduce){.galaxy-ring,.galaxy-haze,.drifting-star{animation:none!important;will-change:auto!important}}
+
+/* Landscape galaxy wallpaper: fill the viewport without stretching. */
+.app{
+  background-image:
+    linear-gradient(rgba(3,12,31,.38),rgba(3,12,31,.48)),
+    url('/everstar-memories/galaxy-background.webp') !important;
+  background-size:cover !important;
+  background-position:center center !important;
+  background-repeat:no-repeat !important;
+  background-attachment:fixed !important;
+  background-color:#030c1f !important;
+}
+@media(max-width:700px){
+  .app{
+    background-attachment:scroll !important;
+    background-position:center center !important;
+  }
+}
