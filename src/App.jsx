@@ -11,14 +11,28 @@ Object.assign(AR_TRANSLATIONS, { 'EVERSTAR GUIDE':'دليل EVERSTAR', 'PERSONAL
 Object.assign(AR_TRANSLATIONS, {"Your private universe, made for memories that matter.":"عالمك الخاص، صُمّم للذكريات التي تستحق البقاء.","EVERSTAR is a private space to preserve the moments of your life.":"EVERSTAR مساحة خاصة لحفظ لحظات حياتك.","Write a memory, add photos or files, and let it become a star in your personal galaxy.":"اكتب ذكرى وأرفق الصور أو الملفات، ودعها تصبح نجمة في مجرتك الخاصة.","Create a time capsule and choose when it can be opened. Its contents stay encrypted until that date.":"أنشئ كبسولة زمنية وحدد موعد فتحها. تبقى محتوياتها مشفّرة حتى ذلك التاريخ.","Your memories follow you across devices when you sign in to your account.":"ذكرياتك ترافقك عبر أجهزتك عند تسجيل الدخول إلى حسابك.","Your private universe":"عالمك الخاص","Preserve moments":"احفظ اللحظات","Seal for the future":"اختمها للمستقبل","Revisit your story":"استرجع قصتك","Private by design":"الخصوصية أولاً","EVERSTAR keeps your memories in one personal place.":"يجمع EVERSTAR ذكرياتك في مساحة شخصية واحدة.","Save moments as glowing stars, search them, and explore them in your timeline.":"احفظ لحظاتك كنجوم مضيئة، وابحث عنها واستكشفها في خطك الزمني.","Choose a future date for a capsule. The app keeps it sealed until the date arrives.":"اختر تاريخاً مستقبلياً للكبسولة، وسيبقيها التطبيق مختومة حتى يحين موعدها.","Receive an alert when a capsule is ready, and revisit the memory whenever you wish.":"تلقَّ تنبيهاً عندما تصبح الكبسولة جاهزة، واسترجع الذكرى متى شئت.","Enable device notifications":"تفعيل إشعارات الجهاز","Device notifications":"إشعارات الجهاز","Allow EVERSTAR to notify this device when a capsule opens.":"اسمح لـ EVERSTAR بإشعار هذا الجهاز عند فتح كبسولة زمنية.","Notifications are enabled on this device.":"إشعارات هذا الجهاز مفعّلة.","Notifications are blocked by your browser. Change site permissions in your browser settings.":"الإشعارات محظورة من المتصفح. غيّر أذونات الموقع من إعدادات المتصفح.","Enable notifications":"تفعيل الإشعارات","Your browser does not support push notifications.":"متصفحك لا يدعم الإشعارات الفورية.","Allow notifications in the browser prompt to continue.":"اسمح بالإشعارات في نافذة المتصفح للمتابعة.","Device notification setup is not available yet.":"إعداد إشعارات الجهاز غير متاح بعد.","Notifications enabled for this device.":"تم تفعيل الإشعارات لهذا الجهاز.","Could not enable notifications. Please try again.":"تعذر تفعيل الإشعارات. حاول مرة أخرى.","Signed in successfully.":"تم تسجيل الدخول بنجاح.","Sign in failed.":"فشل تسجيل الدخول.","Memory deleted.":"تم حذف الذكرى.","Memory copied.":"تم نسخ الذكرى.","Could not load your universe.":"تعذر تحميل عالمك.","Could not save this memory.":"تعذر حفظ هذه الذكرى.","The opening date cannot be before the memory date.":"لا يمكن أن يسبق موعد الفتح تاريخ الذكرى.","Search memories":"ابحث في الذكريات","Search":"بحث","Saved":"تاريخ الحفظ","Annual reminder":"التذكير السنوي","days remaining":"يوم متبقٍ","Unlocked":"مفتوحة","Locked":"مختومة","Light theme":"الوضع الفاتح","Dark theme":"الوضع الداكن","Toggle theme":"تبديل المظهر","Sign out":"تسجيل الخروج","Main navigation":"التنقل الرئيسي"});
 function I18n({ lang, children }) {
  if (lang !== 'ar') return children;
+ const translateText = (value) => {
+  const exact = AR_TRANSLATIONS[value.trim()];
+  if (exact) return value.replace(value.trim(), exact);
+  const keys = Object.keys(AR_TRANSLATIONS).sort((a,b) => b.length-a.length);
+  return keys.reduce((text,key) => text.split(key).join(AR_TRANSLATIONS[key]), value);
+ };
  const translate = (node) => {
-  if (typeof node === 'string') { const key=node.trim(); if(!key) return node; const value=AR_TRANSLATIONS[key]; return value ? node.replace(key,value) : node; }
+  if (typeof node === 'string') return translateText(node);
   if (Array.isArray(node)) return node.map(translate);
-  if (React.isValidElement(node)) { const props={...node.props}; for(const key of ['placeholder','title','aria-label']) if(typeof props[key]==='string') props[key]=AR_TRANSLATIONS[props[key]]||props[key]; if(props.children!==undefined) props.children=translate(props.children); return React.cloneElement(node,props); }
+  if (React.isValidElement(node)) {
+   const props = { ...node.props };
+   ['placeholder','title','aria-label'].forEach((key) => {
+    if (typeof props[key] === 'string') props[key] = translateText(props[key]);
+   });
+   if (props.children !== undefined) props.children = translate(props.children);
+   return React.cloneElement(node, props);
+  }
   return node;
  };
  return <>{translate(children)}</>;
 }
+
 const tx = (value) => localStorage.getItem('everstar.language') === 'ar' ? (AR_TRANSLATIONS[value] || value) : value;
 function LanguageSwitch({lang,setLang}) { return <button className="language-switch" type="button" onClick={()=>setLang(lang==='en'?'ar':'en')}>{lang==='en'?'عربي':'English'}</button>; }
 function GalaxyBackground() {
