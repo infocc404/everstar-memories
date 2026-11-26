@@ -18,6 +18,8 @@ export default function OwnerDashboard({ supabase, session, lang = 'en' }) {
   const [announcements, setAnnouncements] = useState([]);
   const [logs, setLogs] = useState([]);
   const [alerts, setAlerts] = useState([]);
+  const [pushHealth, setPushHealth] = useState(null);
+  const [pushAttempts, setPushAttempts] = useState([]);
   const [settings, setSettings] = useState({});
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
@@ -33,18 +35,24 @@ export default function OwnerDashboard({ supabase, session, lang = 'en' }) {
         supabase.from('app_announcements').select('*').order('created_at', { ascending: false }).limit(30),
         supabase.from('admin_audit_logs').select('id,action,target_user_id,metadata,created_at').order('created_at', { ascending: false }).limit(50),
         supabase.from('admin_alerts').select('*').order('created_at', { ascending: false }).limit(50),
-        supabase.from('app_settings').select('key,value')
+        supabase.from('app_settings').select('key,value'),
+        supabase.rpc('owner_push_delivery_health'),
+        supabase.rpc('owner_recent_push_delivery_attempts')
       ]);
       if (s.error) throw s.error;
       if (a.error) throw a.error;
       if (l.error) throw l.error;
       if (al.error) throw al.error;
       if (st.error) throw st.error;
+      if (ph.error) throw ph.error;
+      if (pa.error) throw pa.error;
       setStats(s.data || {});
       setAnnouncements(a.data || []);
       setLogs(l.data || []);
       setAlerts(al.data || []);
       setSettings(Object.fromEntries((st.data || []).map(x => [x.key, x.value])));
+      setPushHealth(ph.data || {});
+      setPushAttempts(pa.data || []);
     } catch (e) { setError(e.message || 'Unable to load owner dashboard.'); }
     finally { setBusy(false); }
   }, [supabase]);
@@ -92,6 +100,7 @@ export default function OwnerDashboard({ supabase, session, lang = 'en' }) {
     ['announcements', t('Announcements','الإعلانات'), Megaphone],
     ['settings', t('App settings','إعدادات التطبيق'), Settings],
     ['monitor', t('System & security','النظام والأمان'), ShieldCheck],
+    ['delivery', t('Delivery monitoring','مراقبة الإرسال'), Bell],
     ['logs', t('Activity log','سجل النشاط'), Shield]
   ];
   const cards = [
@@ -112,6 +121,21 @@ export default function OwnerDashboard({ supabase, session, lang = 'en' }) {
     {tab === 'announcements' && <div className="owner-columns"><form className="owner-panel owner-form" onSubmit={publishAnnouncement}><h3>{t('Publish an announcement','نشر إعلان')}</h3><label>{t('Title','العنوان')}<input required maxLength="160" value={title} onChange={e=>setTitle(e.target.value)}/></label><label>{t('Message','الرسالة')}<textarea rows="4" maxLength="5000" value={body} onChange={e=>setBody(e.target.value)}/></label><button className="gold-btn">{t('Publish to all users','نشر لجميع المستخدمين')}</button></form><div className="owner-panel"><h3>{t('Published announcements','الإعلانات المنشورة')}</h3>{announcements.map(a=><article className="owner-announcement" key={a.id}><div><b>{a.title}</b><p>{a.body}</p><small>{new Date(a.created_at).toLocaleString()}</small></div><button className="outline-btn" onClick={()=>toggleAnnouncement(a)}>{a.is_active?t('Disable','إيقاف'):t('Enable','تفعيل')}</button></article>)}{!announcements.length&&<p>{t('No announcements yet.','لا توجد إعلانات بعد.')}</p>}</div></div>}
     {tab === 'settings' && <div className="owner-panel"><h3>{t('Application settings','إعدادات التطبيق')}</h3><p>{t('These values are stored centrally. Features must read the relevant key before they affect user access.','تُحفظ هذه القيم مركزياً. يجب أن تقرأ الميزات القيمة المناسبة قبل أن تؤثر في وصول المستخدمين.')}</p><div className="owner-setting"><span>{t('Application name','اسم التطبيق')}</span><input value={typeof settings.site_name==='string'?settings.site_name.replace(/^"|"$/g,''):'EVERSTAR'} onChange={e=>setSettings(p=>({...p,site_name:e.target.value}))}/><button className="outline-btn" onClick={()=>saveSetting('site_name',settings.site_name||'EVERSTAR')}>{t('Save','حفظ')}</button></div>{[['maintenance_mode',t('Maintenance mode','وضع الصيانة')],['allow_signups',t('Allow new registrations','السماح بالتسجيل')]].map(([key,label])=><div className="owner-setting" key={key}><span>{label}</span><label className="owner-toggle"><input type="checkbox" checked={settings[key]===true || (settings[key]===undefined && key==='allow_signups')} onChange={e=>saveSetting(key,e.target.checked)}/><i/></label></div>)}<div className="owner-setting"><span>{t('Default language','اللغة الافتراضية')}</span><select value={settings.default_language||'en'} onChange={e=>saveSetting('default_language',e.target.value)}><option value="en">English</option><option value="ar">العربية</option></select></div><p className="owner-footnote">{t('Maintenance mode and signup controls are saved here; the authentication and routing gates still need to be wired before these switches enforce access.','يتم حفظ وضع الصيانة والتحكم بالتسجيل هنا؛ ويلزم ربط بوابات المصادقة والتنقل حتى تفرض هذه المفاتيح الوصول فعلياً.')}</p></div>}
     {tab === 'monitor' && <div className="owner-columns"><div className="owner-panel"><h3>{t('System alerts','تنبيهات النظام')}</h3>{alerts.map(a=><article className="owner-alert" key={a.id}><span className={'owner-severity '+a.severity}>{a.severity}</span><div><b>{a.category}</b><p>{a.message}</p><small>{new Date(a.created_at).toLocaleString()}</small></div>{!a.resolved_at&&<button className="outline-btn" onClick={()=>resolveAlert(a)}>{t('Resolve','حل')}</button>}</article>)}{!alerts.length&&<p>{t('No alerts have been recorded.','لم تُسجل تنبيهات.')}</p>}</div><div className="owner-panel"><h3>{t('Security notes','ملاحظات أمنية')}</h3><p>{t('Admin operations are checked inside database functions. The owner role cannot be assigned or removed from this screen.','تُفحص عمليات الإدارة داخل دوال قاعدة البيانات. لا يمكن تعيين أو إزالة دور المالك من هذه الشاشة.')}</p><p>{t('Email delivery and push delivery require live provider tests; this dashboard does not claim delivery success without provider events.','يتطلب تسليم البريد والإشعارات اختبارات فعلية لدى مزود الخدمة؛ ولا تدّعي هذه اللوحة نجاح الإرسال دون أحداث موثقة.')}</p></div></div>}
+    {tab === 'delivery' && <div className="owner-panel">
+      <h3>{t('Push delivery monitoring','مراقبة الإشعارات الفورية')}</h3>
+      <div className="owner-metrics">
+        <article><span><Activity size={17}/></span><b>{pushHealth?.attempts_24h ?? 0}</b><small>{t('Attempts in 24 hours','محاولات آخر 24 ساعة')}</small></article>
+        <article><span><Check size={17}/></span><b>{pushHealth?.sent_24h ?? 0}</b><small>{t('Successful attempts','محاولات ناجحة')}</small></article>
+        <article><span><AlertTriangle size={17}/></span><b>{pushHealth?.failed_24h ?? 0}</b><small>{t('Failed attempts','محاولات فاشلة')}</small></article>
+      </div>
+      <p>{t('Failed deliveries remain eligible for retry during the next scheduled dispatch. Expired device subscriptions are disabled automatically.','تبقى عمليات الإرسال الفاشلة قابلة لإعادة المحاولة عند التشغيل المجدول التالي. ويتم تعطيل اشتراكات الأجهزة المنتهية تلقائياً.')}</p>
+      <div className="owner-log-list">{pushAttempts.map((a,i)=><article key={a.notification_id + '-' + a.user_id + '-' + i}>
+        <span>{a.status === 'sent' ? t('Delivered','تم الإرسال') : t('Failed','فشل الإرسال')}</span>
+        <small>{a.attempted_at ? new Date(a.attempted_at).toLocaleString() : ''} · {t('Attempt','المحاولة')} {a.attempt_count}</small>
+        <code>{[a.provider_status && ('HTTP ' + a.provider_status), a.error_code].filter(Boolean).join(' · ') || t('No provider error','لا يوجد خطأ من المزود')}</code>
+      </article>)}{!pushAttempts.length && <p>{t('No push delivery attempts have been recorded yet.','لم تُسجل محاولات إرسال بعد.')}</p>}</div>
+      <p className="owner-footnote">{t('This section records push-provider responses only. Email delivery is managed by Supabase Auth and must be checked in Auth logs / SMTP provider reports.','يسجل هذا القسم نتائج مزود الإشعارات الفورية فقط. أما البريد فيديره Supabase Auth ويجب فحصه في سجلات المصادقة وتقارير مزود SMTP.')}</p>
+    </div>}
     {tab === 'logs' && <div className="owner-panel"><h3>{t('Recent administrative activity','أحدث الأنشطة الإدارية')}</h3><div className="owner-log-list">{logs.map(l=><article key={l.id}><span>{l.action}</span><small>{l.target_user_id||t('System','النظام')} · {new Date(l.created_at).toLocaleString()}</small><code>{JSON.stringify(l.metadata||{})}</code></article>)}{!logs.length&&<p>{t('No activity recorded yet.','لم يُسجل أي نشاط بعد.')}</p>}</div></div>}
   </section>;
 }
