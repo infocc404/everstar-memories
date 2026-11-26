@@ -363,3 +363,53 @@ body{background:#03122c!important}
 @media(prefers-reduced-motion:reduce){
   .galaxy-ring,.galaxy-haze,.drifting-star{animation:none!important;will-change:auto!important}
 }
+
+
+/* FINAL GALAXY THEME — use the user's image as the actual app backdrop */
+.app{
+  --gold:#a9dfff;
+  --bg:#06152f;
+  --panel:rgba(8,25,54,.78);
+  --line:rgba(151,207,255,.20);
+  --text:#f1f8ff;
+  --muted:#a9bfd8;
+  background:
+    linear-gradient(180deg,rgba(3,13,34,.34),rgba(4,18,43,.50)),
+    url('/everstar-memories/galaxy-background.webp') center center / cover fixed no-repeat !important;
+}
+.app.light{
+  --bg:#dceafa;
+  --panel:rgba(231,242,255,.84);
+  --line:rgba(43,99,155,.20);
+  --text:#142b49;
+  --muted:#536d8b;
+  background:
+    linear-gradient(180deg,rgba(218,235,255,.52),rgba(222,237,255,.70)),
+    url('/everstar-memories/galaxy-background.webp') center center / cover fixed no-repeat !important;
+}
+/* Keep all galaxy particles above the image and below the interface. */
+.galaxy-field{z-index:0!important;opacity:1!important;mix-blend-mode:screen;pointer-events:none}
+.main,.sidebar{position:relative;z-index:1}
+.sidebar{background:rgba(4,17,42,.66)!important;border-color:rgba(137,198,255,.22)!important;backdrop-filter:blur(12px)!important}
+.light .sidebar{background:rgba(225,239,255,.72)!important}
+.topbar{background:rgba(3,16,40,.58)!important;backdrop-filter:blur(10px)!important;border-color:rgba(137,198,255,.20)!important}
+.light .topbar{background:rgba(223,238,255,.68)!important}
+.top-nav-button.active{border-color:rgba(142,211,255,.6)!important;background:linear-gradient(110deg,rgba(63,153,235,.22),rgba(154,215,255,.12))!important;box-shadow:0 0 20px rgba(75,166,255,.20)!important}
+.top-nav-button.active svg,.eyebrow,.link-btn,.brand,.brand-icon,.hero h1 em{color:#a9dfff!important}
+.gold-btn{background:linear-gradient(110deg,#b9e7ff,#6db8f0)!important;color:#08203b!important;box-shadow:0 7px 24px rgba(74,163,235,.22)!important}
+.gold-btn:hover{box-shadow:0 10px 28px rgba(74,163,235,.36)!important}
+/* Planetary orbital paths: the ellipses keep their tilt while rotating slowly. */
+.galaxy-ring{border-color:rgba(150,211,255,.32)!important;box-shadow:0 0 32px rgba(78,163,255,.10)!important;animation:orbit-slow 72s linear infinite!important;transform-origin:50% 50%;will-change:rotate}
+.galaxy-ring.ring-two{border-color:rgba(190,220,255,.28)!important;animation-duration:96s!important;animation-direction:reverse!important}
+.galaxy-ring.ring-three{border-color:rgba(105,183,255,.30)!important;animation-duration:128s!important}
+.galaxy-ring i{background:#e5f7ff!important;box-shadow:0 0 9px 3px rgba(156,220,255,.8),0 0 26px rgba(92,176,255,.7)!important}
+.ring-two i{background:#a8caff!important}
+.ring-three i{background:#d4f2ff!important}
+.galaxy-haze{background:radial-gradient(ellipse at center,rgba(76,154,255,.22),rgba(69,130,220,.09) 38%,transparent 72%)!important;filter:blur(18px)!important;animation:nebula-float 54s ease-in-out infinite alternate!important;will-change:transform}
+@keyframes nebula-float{from{transform:translate3d(-2%,1%,0) scale(.96)}to{transform:translate3d(2%,-1%,0) scale(1.04)}}
+.drifting-star{background:#effaff!important;box-shadow:0 0 7px 2px rgba(169,222,255,.8),0 0 17px rgba(93,176,255,.45)!important;animation:star-drift 6s ease-in-out infinite alternate!important;will-change:transform,opacity}
+.drifting-star:nth-of-type(3n){background:#c5dcff!important}
+.drifting-star:nth-of-type(4n){background:#ffffff!important}
+.orbit-art .orbit{border-color:rgba(155,211,255,.55)!important}
+.orbit-art .globe{box-shadow:0 0 55px rgba(90,170,255,.55),inset -13px -15px 25px #040713a6!important}
+@media(prefers-reduced-motion:reduce){.galaxy-ring,.galaxy-haze,.drifting-star{animation:none!important;will-change:auto!important}}
