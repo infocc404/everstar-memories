@@ -26,6 +26,15 @@ export default function OwnerDashboard({ supabase, session, lang = 'en' }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [aal, setAal] = useState('checking');
+  const [mfaFactors, setMfaFactors] = useState([]);
+  const [mfaFactorId, setMfaFactorId] = useState('');
+  const [mfaChallengeId, setMfaChallengeId] = useState('');
+  const [mfaCode, setMfaCode] = useState('');
+  const [mfaQr, setMfaQr] = useState('');
+  const [mfaSecret, setMfaSecret] = useState('');
+  const [mfaError, setMfaError] = useState('');
+  const [mfaBusy, setMfaBusy] = useState(false);
 
   const load = useCallback(async () => {
     setBusy(true); setError('');
@@ -57,13 +66,67 @@ export default function OwnerDashboard({ supabase, session, lang = 'en' }) {
     finally { setBusy(false); }
   }, [supabase]);
 
-  const loadUsers = useCallback(async (term = query) => {
+  const loadUsers = useCallback(async (term = '') => {
     const { data, error: e } = await supabase.rpc('owner_list_users', { p_search: term });
     if (e) setError(e.message); else setUsers(data || []);
-  }, [supabase, query]);
+  }, [supabase]);
 
-  useEffect(() => { load(); }, [load]);
-  useEffect(() => { if (tab === 'users') loadUsers(''); }, [tab, loadUsers]);
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const [assurance, factorResult] = await Promise.all([
+        supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
+        supabase.auth.mfa.listFactors()
+      ]);
+      if (!active) return;
+      if (assurance.error) setMfaError(assurance.error.message);
+      const factors = factorResult.data ? [...(factorResult.data.totp || []), ...(factorResult.data.phone || [])] : [];
+      setMfaFactors(factors);
+      setAal(assurance.data?.currentLevel || 'aal1');
+    })().catch(e => { if (active) { setMfaError(e.message || 'MFA check failed'); setAal('aal1'); } });
+    return () => { active = false; };
+  }, [supabase]);
+  useEffect(() => { if (aal === 'aal2') load(); }, [aal, load]);
+  useEffect(() => { if (aal === 'aal2' && tab === 'users') loadUsers(''); }, [aal, tab, loadUsers]);
+
+  async function startMfaChallenge() {
+    setMfaError(''); setMfaBusy(true);
+    try {
+      let factor = mfaFactors.find(x => x.status === 'verified');
+      if (!factor) {
+        factor = mfaFactors.find(x => x.status === 'unverified');
+        if (!factor) {
+          const enrolled = await supabase.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'EVERSTAR owner' });
+          if (enrolled.error) throw enrolled.error;
+          factor = enrolled.data;
+          setMfaQr(factor.totp?.qr_code || '');
+          setMfaSecret(factor.totp?.secret || '');
+          setMfaFactors(prev => [...prev, { id: factor.id, status: 'unverified', factor_type: 'totp' }]);
+        }
+      }
+      setMfaFactorId(factor.id);
+      const challenge = await supabase.auth.mfa.challenge({ factorId: factor.id });
+      if (challenge.error) throw challenge.error;
+      setMfaChallengeId(challenge.data.id);
+    } catch (e) { setMfaError(e.message || 'Could not start authenticator verification.'); }
+    finally { setMfaBusy(false); }
+  }
+
+  async function verifyMfaCode() {
+    setMfaError(''); setMfaBusy(true);
+    try {
+      if (!mfaFactorId || !mfaChallengeId || !/^\\d{6}$/.test(mfaCode.trim())) throw new Error('Enter the six-digit authenticator code.');
+      const verified = await supabase.auth.mfa.verify({ factorId: mfaFactorId, challengeId: mfaChallengeId, code: mfaCode.trim() });
+      if (verified.error) throw verified.error;
+      await supabase.auth.refreshSession();
+      const assurance = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (assurance.error) throw assurance.error;
+      setAal(assurance.data?.currentLevel || 'aal1');
+      setMfaCode(''); setMfaChallengeId(''); setMfaQr(''); setMfaSecret('');
+      if (assurance.data?.currentLevel !== 'aal2') throw new Error('Authenticator verification did not reach the required security level.');
+    } catch (e) { setMfaError(e.message || 'Authenticator verification failed.'); }
+    finally { setMfaBusy(false); }
+  }
 
   async function saveSetting(key, value) {
     setError(''); setMessage('');
@@ -93,6 +156,19 @@ export default function OwnerDashboard({ supabase, session, lang = 'en' }) {
     const { error: e } = await supabase.from('admin_alerts').update({ resolved_at: new Date().toISOString() }).eq('id', item.id);
     if (e) setError(e.message); else load();
   }
+
+  if (aal !== 'aal2') return <section className="owner-dashboard" dir={ar ? 'rtl' : 'ltr'}>
+    <div className="owner-head"><div><div className="eyebrow">{t('OWNER SECURITY CHECK','فحص أمان المالك')}</div><h1>{t('Protect your control center.','احمِ مركز التحكم.')}</h1><p>{t('Owner access requires a six-digit authenticator code. Set up an authenticator app such as Google Authenticator, Microsoft Authenticator or 1Password.','يتطلب دخول المالك رمزاً من ستة أرقام من تطبيق مصادقة مثل Google Authenticator أو Microsoft Authenticator أو 1Password.')}</p></div></div>
+    {aal === 'checking' && <p>{t('Checking your security session…','جارٍ فحص جلسة الأمان…')}</p>}
+    {mfaQr && <div className="owner-panel"><h3>{t('Scan this QR code','امسح رمز QR')}</h3><img src={mfaQr} alt="Authenticator enrollment QR code" style={{width:220,maxWidth:'100%',background:'#fff',padding:12,borderRadius:12}}/><p>{t('Or enter this setup key manually:','أو أدخل مفتاح الإعداد يدوياً:')}</p><code>{mfaSecret}</code></div>}
+    {mfaError && <div className="owner-error"><AlertTriangle size={16}/>{mfaError}</div>}
+    <div className="owner-panel owner-form">
+      {!mfaChallengeId ? <button className="gold-btn" disabled={mfaBusy || aal === 'checking'} onClick={startMfaChallenge}>{mfaBusy ? t('Please wait…','يرجى الانتظار…') : mfaFactors.some(x=>x.status==='verified') ? t('Send authenticator challenge','ابدأ التحقق') : t('Set up owner authenticator','إعداد مصادقة المالك')}</button> : <>
+        <label>{t('Six-digit code','رمز التحقق المكوّن من ستة أرقام')}<input inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={mfaCode} onChange={e=>setMfaCode(e.target.value.replace(/\\D/g,'').slice(0,6))}/></label>
+        <button className="gold-btn" disabled={mfaBusy || mfaCode.length!==6} onClick={verifyMfaCode}>{mfaBusy ? t('Verifying…','جارٍ التحقق…') : t('Verify and open owner panel','تحقق وافتح لوحة المالك')}</button>
+      </>}
+    </div>
+  </section>;
 
   const nav = [
     ['overview', t('Overview','نظرة عامة'), Activity],
