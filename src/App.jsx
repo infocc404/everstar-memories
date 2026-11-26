@@ -77,6 +77,8 @@ export default function App() {
   const [noticeOpen, setNoticeOpen] = useState(false);
   const [dark, setDark] = useState(() => localStorage.getItem('everstar.theme') !== 'light');
   const [busy, setBusy] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
+  const [pushEnabled, setPushEnabled] = useState(false);
   const [toast, setToast] = useState('');
   const [error, setError] = useState('');
   const [form, setForm] = useState({ title: '', body: '', date: new Date().toLocaleDateString('en-CA'), unlock: new Date().toLocaleDateString('en-CA'), mood: 'Hopeful', color: '#e6bd79', files: [] });
@@ -96,6 +98,13 @@ export default function App() {
 
   useEffect(() => { localStorage.setItem('everstar.theme', dark ? 'dark' : 'light'); }, [dark]);
   useEffect(() => { localStorage.setItem('everstar.language', lang); document.documentElement.lang = lang; document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr'; }, [lang]);
+  useEffect(() => {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    navigator.serviceWorker.getRegistration(import.meta.env.BASE_URL).then(async (registration) => {
+      if (registration) setPushEnabled(Boolean(await registration.pushManager.getSubscription()));
+    }).catch(() => {});
+  }, []);
+
   useEffect(() => {
     if (!toast) return;
     const timer = setTimeout(() => setToast(''), 3500);
@@ -181,6 +190,36 @@ export default function App() {
     const { error: updateError } = await supabase.from('notifications').update({ read_at: new Date().toISOString() }).eq('id', id);
     if (!updateError) setNotifications((items) => items.map((n) => n.id === id ? { ...n, read_at: new Date().toISOString() } : n));
   }
+  async function enableDeviceNotifications() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
+      setToast('Your browser does not support push notifications.');
+      return;
+    }
+    setPushBusy(true);
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        setToast(permission === 'denied' ? 'Notifications are blocked by your browser. Change site permissions in your browser settings.' : 'Allow notifications in the browser prompt to continue.');
+        return;
+      }
+      const registration = await navigator.serviceWorker.register(import.meta.env.BASE_URL + 'sw.js', { scope: import.meta.env.BASE_URL });
+      const { data: keyData, error: keyError } = await supabase.functions.invoke('push-api/public-key', { method: 'GET' });
+      if (keyError || !keyData?.publicKey) throw new Error(keyData?.error || keyError?.message || 'Device notification setup is not available yet.');
+      const padding = '='.repeat((4 - keyData.publicKey.length % 4) % 4);
+      const rawKey = Uint8Array.from(atob((keyData.publicKey + padding).replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
+      let subscription = await registration.pushManager.getSubscription();
+      if (!subscription) subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: rawKey });
+      const { error: saveError } = await supabase.functions.invoke('push-api/subscribe', { method: 'POST', body: subscription.toJSON() });
+      if (saveError) throw saveError;
+      setPushEnabled(true);
+      setToast('Notifications enabled for this device.');
+    } catch (e) {
+      setToast(e.message || 'Could not enable notifications. Please try again.');
+    } finally {
+      setPushBusy(false);
+    }
+  }
+
   async function signOut() { await supabase.auth.signOut(); setPage('overview'); }
 
   if (!supabaseConfigured) return <div className="setup-screen"><div className="setup-card"><Aperture size={36}/><div className="eyebrow">MEMORIES BEYOND TIME</div><h1>Connect your private universe.</h1><p>EVERSTAR is ready for its secure backend. Add your Supabase project URL and publishable key to a local <code>.env</code> file to continue.</p><pre>VITE_SUPABASE_URL=https://your-project.supabase.co<br/>VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-key</pre><p className="setup-foot">Do not put a service-role key or encryption key in this file. Those belong only in Supabase server secrets.</p></div></div>;
@@ -216,7 +255,7 @@ export default function App() {
         {page === 'capsules' && <><PageHead eyebrow="SEALED WITH A PROMISE" title="Time capsules" desc="Messages from who you were, waiting for who you will become." action={() => setModal(true)}/><div className="capsule-note"><LockKeyhole/> Capsule contents are encrypted. The server will not release them before the opening date.</div>{locked.sort((a,b) => new Date(a.unlockAt) - new Date(b.unlockAt)).map((m) => <button className="capsule-row" key={m.id} onClick={() => openMemory(m)}><span className="lock-symbol"><LockKeyhole/></span><span className="capsule-title"><b>Sealed memory</b><small>Private capsule · saved {fmt(m.date)}</small></span><span className="unlock-date"><b>{fmt(m.unlockAt)}</b><small>{remaining(m.unlockAt)} days remaining</small></span><LockKeyhole/></button>)}{!locked.length && <Empty title="Your sky is open" text="No sealed capsules yet. Create one for a future you." onClick={() => setModal(true)}/>}<div className="section-head ready-head"><div className="eyebrow">THE MOMENT HAS ARRIVED</div><h2>Ready to revisit</h2></div><div className="cards">{ready.map((m, i) => <MemoryCard key={m.id} memory={m} index={i} onClick={() => openMemory(m)}/>)}</div></>}
         {page === 'timeline' && <><PageHead eyebrow="A LIFE IN LITTLE CHAPTERS" title="Your timeline" desc="Look back at the moments that shaped your universe."/><div className="timeline">{[...memories].sort((a,b) => new Date(b.date) - new Date(a.date)).map((m) => <button className="timeline-row" key={m.id} onClick={() => openMemory(m)}><time>{fmt(m.date)}</time><i style={{ background: m.color || '#e6bd79' }}/><span><b>{m.isLocked ? 'Sealed memory' : m.title}</b><small>{m.isLocked ? '⌑ Sealed until ' + fmt(m.unlockAt) : '✦ Unlocked'}</small></span></button>)}</div>{!memories.length && <Empty title="Your story begins here" text="Your timeline will grow as you preserve moments." onClick={() => setModal(true)}/>}</>}
         {page === 'guide' && <section className="info-page"><PageHead eyebrow="EVERSTAR GUIDE" title="How it works" desc="A simple guide to your private universe."/><div className="info-grid"><article className="info-card"><span><Star/></span><h3>Create memories</h3><p>Write a title and story, choose its date, and optionally attach photos or files.</p></article><article className="info-card"><span><LockKeyhole/></span><h3>Seal a time capsule</h3><p>Choose a future opening date. Until then, the memory stays encrypted and hidden.</p></article><article className="info-card"><span><CalendarDays/></span><h3>Revisit your timeline</h3><p>See your memories in chronological order and open those whose time has arrived.</p></article><article className="info-card"><span><Aperture/></span><h3>Your privacy</h3><p>Your private memories belong to your account. Never share your password or recovery links.</p></article></div></section>}
-        {page === 'settings' && <section className="info-page"><PageHead eyebrow="PERSONALIZE YOUR SPACE" title="Settings & preferences" desc="Manage how EVERSTAR looks and how you access your account."/><div className="settings-list"><div className="settings-row"><div><b>Appearance</b><p>Dark theme / Light theme</p></div><button className="outline-btn" onClick={() => setDark(!dark)}>{dark ? 'Light theme' : 'Dark theme'} {dark ? <Sun size={15}/> : <Moon size={15}/>}</button></div><div className="settings-row"><div><b>Language</b><p>English / Arabic</p></div><LanguageSwitch lang={lang} setLang={setLang}/></div><div className="settings-row"><div><b>Account</b><p>Signed in as {session.user.email}</p></div><button className="outline-btn" onClick={signOut}><LogOut size={15}/> Sign out</button></div><div className="settings-row security-row"><div><b>Privacy & security</b><p>Your memories are encrypted before storage. Sealed capsules remain unavailable until their opening date.</p></div><LockKeyhole/></div></div></section>}
+        {page === 'settings' && <section className="info-page"><PageHead eyebrow="PERSONALIZE YOUR SPACE" title="Settings & preferences" desc="Manage how EVERSTAR looks and how you access your account."/><div className="settings-list"><div className="settings-row"><div><b>Appearance</b><p>Dark theme / Light theme</p></div><button className="outline-btn" onClick={() => setDark(!dark)}>{dark ? 'Light theme' : 'Dark theme'} {dark ? <Sun size={15}/> : <Moon size={15}/>}</button></div><div className="settings-row"><div><b>Language</b><p>English / Arabic</p></div><LanguageSwitch lang={lang} setLang={setLang}/></div><div className="settings-row"><div><b>Device notifications</b><p>Allow EVERSTAR to notify this device when a capsule opens.</p></div><button className="outline-btn" onClick={enableDeviceNotifications} disabled={pushBusy || pushEnabled}>{pushBusy ? 'Please wait…' : pushEnabled ? 'Notifications are enabled on this device.' : 'Enable device notifications'} <Bell size={15}/></button></div><div className="settings-row"><div><b>Account</b><p>Signed in as {session.user.email}</p></div><button className="outline-btn" onClick={signOut}><LogOut size={15}/> Sign out</button></div><div className="settings-row security-row"><div><b>Privacy & security</b><p>Your memories are encrypted before storage. Sealed capsules remain unavailable until their opening date.</p></div><LockKeyhole/></div></div></section>}
         <footer className="footer"><b><Aperture size={15}/> EVERSTAR</b><span>Made for the moments that make you, you.</span><small>© {new Date().getFullYear()} EVERSTAR</small></footer>
       </div>
     </main>
@@ -289,3 +328,5 @@ function MemoryCard({ memory, index, onClick }) {
   return <button className="memory-card" onClick={onClick}><div className={'card-art art-' + (index % 3)}><div className="tiny-stars">✦　·　✧　　·　✦</div><span className="memory-star" style={{ color: memory.color || '#e6bd79' }}><Star size={21} fill="currentColor"/></span><small>{fmt(memory.date)}</small>{locked && <i><LockKeyhole size={11}/> SEALED</i>}</div><div className="card-body"><small>{tx(locked ? 'TIME CAPSULE' : (memory.mood || 'MEMORY').toUpperCase())}</small><h3>{locked ? tx('Sealed memory') : memory.title}</h3><p>{locked ? tx('A little universe waiting for the right time.') : memory.body}</p><div>{locked ? tx('Opens') + ' ' + fmt(memory.unlockAt) : tx('Open memory')} <span>{locked ? <LockKeyhole size={13}/> : <ChevronRight size={15}/>}</span></div></div></button>;
 }
 function Empty({ title, text, onClick }) { return <div className="empty"><Star size={25}/><h3>{tx(title)}</h3><p>{tx(text)}</p><button className="outline-btn" onClick={onClick}><Plus size={15}/> {tx('Create a memory')}</button></div>; }
+
+Object.assign(AR_TRANSLATIONS, {"Your private universe, made for memories that matter.":"عالمك الخاص، صُمّم للذكريات التي تستحق البقاء.","EVERSTAR is a private space to preserve the moments of your life.":"EVERSTAR مساحة خاصة لحفظ لحظات حياتك.","Write a memory, add photos or files, and let it become a star in your personal galaxy.":"اكتب ذكرى وأرفق الصور أو الملفات، ودعها تصبح نجمة في مجرتك الخاصة.","Create a time capsule and choose when it can be opened. Its contents stay encrypted until that date.":"أنشئ كبسولة زمنية وحدد موعد فتحها. تبقى محتوياتها مشفّرة حتى ذلك التاريخ.","Your memories follow you across devices when you sign in to your account.":"ذكرياتك ترافقك عبر أجهزتك عند تسجيل الدخول إلى حسابك.","Preserve moments":"احفظ اللحظات","Seal for the future":"اختمها للمستقبل","Revisit your story":"استرجع قصتك","Private by design":"الخصوصية أولاً","Save moments as glowing stars, search them, and explore them in your timeline.":"احفظ لحظاتك كنجوم مضيئة، وابحث عنها واستكشفها في خطك الزمني.","Choose a future date for a capsule. The app keeps it sealed until the date arrives.":"اختر تاريخاً مستقبلياً للكبسولة، وسيبقيها التطبيق مختومة حتى يحين موعدها.","Receive an alert when a capsule is ready, and revisit the memory whenever you wish.":"تلقَّ تنبيهاً عندما تصبح الكبسولة جاهزة، واسترجع الذكرى متى شئت.","Device notifications":"إشعارات الجهاز","Allow EVERSTAR to notify this device when a capsule opens.":"اسمح لـ EVERSTAR بإشعار هذا الجهاز عند فتح كبسولة زمنية.","Enable device notifications":"تفعيل إشعارات الجهاز","Notifications are enabled on this device.":"إشعارات هذا الجهاز مفعّلة.","Notifications are blocked by your browser. Change site permissions in your browser settings.":"الإشعارات محظورة من المتصفح. غيّر أذونات الموقع من إعدادات المتصفح.","Enable notifications":"تفعيل الإشعارات","Your browser does not support push notifications.":"متصفحك لا يدعم الإشعارات الفورية.","Allow notifications in the browser prompt to continue.":"اسمح بالإشعارات في نافذة المتصفح للمتابعة.","Device notification setup is not available yet.":"إعداد إشعارات الجهاز غير متاح بعد.","Notifications enabled for this device.":"تم تفعيل إشعارات هذا الجهاز.","Could not enable notifications. Please try again.":"تعذر تفعيل الإشعارات. حاول مرة أخرى."});
