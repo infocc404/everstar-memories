@@ -30,7 +30,7 @@ export default function OwnerDashboard({ supabase, session, lang = 'en' }) {
   const load = useCallback(async () => {
     setBusy(true); setError('');
     try {
-      const [s, a, l, al, st] = await Promise.all([
+      const [s, a, l, al, st, ph, pa] = await Promise.all([
         supabase.rpc('owner_dashboard_stats'),
         supabase.from('app_announcements').select('*').order('created_at', { ascending: false }).limit(30),
         supabase.from('admin_audit_logs').select('id,action,target_user_id,metadata,created_at').order('created_at', { ascending: false }).limit(50),
