@@ -328,3 +328,38 @@ body{background:#03122c!important}
 @media(prefers-reduced-motion:reduce){
   .drifting-star,.app:after{animation:none!important;will-change:auto!important}
 }
+
+
+/* EVERSTAR — supplied galaxy image, with motion reserved for stars and nebulae */
+.app:before{
+  background:
+    linear-gradient(145deg,rgba(2,11,32,.57),rgba(4,27,61,.49) 48%,rgba(3,19,45,.62)),
+    url('/everstar-memories/galaxy-background.webp') center center / cover no-repeat !important;
+}
+.app:after{animation:none!important;opacity:0!important}
+.galaxy-field{opacity:.92!important}
+.galaxy-ring,.galaxy-ring.ring-one{
+  animation:everstar-orbit 190s linear infinite!important;
+  transform-origin:center center;
+}
+.galaxy-ring.ring-two{animation:everstar-orbit 245s linear infinite reverse!important}
+.galaxy-ring.ring-three{animation:everstar-orbit 310s linear infinite!important}
+@keyframes everstar-orbit{to{transform:rotate(360deg)}}
+.galaxy-haze{
+  animation:everstar-nebula-drift 75s ease-in-out infinite alternate!important;
+  will-change:transform;
+}
+@keyframes everstar-nebula-drift{
+  from{transform:translate3d(-1.2%,0,0) scale(.98)}
+  to{transform:translate3d(1.2%,1%,0) scale(1.025)}
+}
+/* Navigation already uses React startTransition; keep page changes lightweight. */
+.top-navigation,.top-nav-button{touch-action:pan-x}
+.top-nav-button{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+@media(max-width:700px){
+  .galaxy-ring,.galaxy-ring.ring-one,.galaxy-ring.ring-two,.galaxy-ring.ring-three{animation-duration:280s!important}
+  .galaxy-haze{animation-duration:110s!important}
+}
+@media(prefers-reduced-motion:reduce){
+  .galaxy-ring,.galaxy-haze,.drifting-star{animation:none!important;will-change:auto!important}
+}
