@@ -1,5 +1,6 @@
 import React, { startTransition, useEffect, useMemo, useState } from 'react';
-import { Aperture, Bell, CalendarDays, ChevronRight, Grid2X2, LockKeyhole, LogOut, Menu, Moon, Plus, Search, Settings2, Sparkles, Star, Sun, Trash2, X, Paperclip, Image, CheckCircle2, AlertCircle } from 'lucide-react';
+import OwnerDashboard from './components/OwnerDashboard';
+import { Aperture, Bell, CalendarDays, ChevronRight, Grid2X2, LockKeyhole, LogOut, Menu, Moon, Plus, Search, Settings2, Sparkles, Star, Sun, Trash2, X, Paperclip, Image, CheckCircle2, AlertCircle, ShieldCheck } from 'lucide-react';
 import { supabase, supabaseConfigured } from './lib/supabase';
 import { createMemory, getMemory, deleteMemory, listMemories, listAttachments, uploadAttachment } from './lib/memories';
 import { isUnlockDateValid } from './lib/capsules.js';
@@ -155,6 +156,8 @@ export default function App() {
   const ready = memories.filter((m) => !m.isLocked);
   const unread = notifications.filter((n) => !n.read_at).length;
   const nav = [['overview', 'Overview', Grid2X2], ['memories', 'My memories', Star], ['capsules', 'Time capsules', LockKeyhole], ['timeline', 'Timeline', CalendarDays], ['guide', 'How it works', Sparkles], ['settings', 'Settings', Settings2]];
+  const isOwner = session?.user?.app_metadata?.role === 'owner';
+  if (isOwner) nav.push(['owner', 'Owner panel', ShieldCheck]);
   const visible = useMemo(() => memories
     .filter((m) => (m.title + ' ' + (m.body || '') + ' ' + (m.mood || '')).toLowerCase().includes(search.toLowerCase()))
     .filter((m) => filter === 'all' || (filter === 'locked' ? m.isLocked : !m.isLocked)), [memories, search, filter]);
@@ -251,6 +254,7 @@ export default function App() {
       </header>
       <div className="content">
         {error && <div className="inline-error"><AlertCircle size={16}/>{error}<button onClick={() => setError('')}><X size={14}/></button></div>}
+        {page === 'owner' && isOwner && <OwnerDashboard supabase={supabase} session={session} lang={lang}/>}
         {page === 'overview' && <>
           <section className="hero"><div className="eyebrow"><Sparkles size={13}/> A LITTLE SPACE, JUST FOR YOU</div><h1>Your life, written<br/><em>in the stars.</em></h1><p>Some moments pass. The ones that matter deserve a place in the universe — and a chance to find you again.</p><button className="gold-btn" onClick={() => setModal(true)}><Plus size={17}/> Preserve a moment <span>↗</span></button><div className="orbit-art"><div className="orbit o1"/><div className="orbit o2"/><div className="globe"><Star fill="currentColor" size={28}/></div><i>✦</i><b>✧</b><small>·</small></div><div className="hero-bottom"><span>✦ &nbsp; Every memory is a world.</span><span>YOUR PRIVATE UNIVERSE</span></div></section>
           <section className="about-everstar">
