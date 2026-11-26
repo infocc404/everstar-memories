@@ -389,7 +389,7 @@ body{background:#03122c!important}
 }
 /* Keep all galaxy particles above the image and below the interface. */
 .galaxy-field{z-index:0!important;opacity:1!important;mix-blend-mode:screen;pointer-events:none}
-.main,.sidebar{position:relative;z-index:1}
+.main{position:relative;z-index:1}.sidebar{z-index:5}
 .sidebar{background:rgba(4,17,42,.66)!important;border-color:rgba(137,198,255,.22)!important;backdrop-filter:blur(12px)!important}
 .light .sidebar{background:rgba(225,239,255,.72)!important}
 .topbar{background:rgba(3,16,40,.58)!important;backdrop-filter:blur(10px)!important;border-color:rgba(137,198,255,.20)!important}
