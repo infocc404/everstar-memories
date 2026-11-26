@@ -330,29 +330,6 @@ body{background:#03122c!important}
 }
 
 
-/* EVERSTAR — supplied galaxy image, with motion reserved for stars and nebulae */
-.app:before{
-  background:
-    linear-gradient(145deg,rgba(2,11,32,.57),rgba(4,27,61,.49) 48%,rgba(3,19,45,.62)),
-    url('/everstar-memories/galaxy-background.webp') center center / cover no-repeat !important;
-}
-.app:after{animation:none!important;opacity:0!important}
-.galaxy-field{opacity:.92!important}
-.galaxy-ring,.galaxy-ring.ring-one{
-  animation:everstar-orbit 190s linear infinite!important;
-  transform-origin:center center;
-}
-.galaxy-ring.ring-two{animation:everstar-orbit 245s linear infinite reverse!important}
-.galaxy-ring.ring-three{animation:everstar-orbit 310s linear infinite!important}
-@keyframes everstar-orbit{to{transform:rotate(360deg)}}
-.galaxy-haze{
-  animation:everstar-nebula-drift 75s ease-in-out infinite alternate!important;
-  will-change:transform;
-}
-@keyframes everstar-nebula-drift{
-  from{transform:translate3d(-1.2%,0,0) scale(.98)}
-  to{transform:translate3d(1.2%,1%,0) scale(1.025)}
-}
 /* Navigation already uses React startTransition; keep page changes lightweight. */
 .top-navigation,.top-nav-button{touch-action:pan-x}
 .top-nav-button{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
@@ -365,28 +342,6 @@ body{background:#03122c!important}
 }
 
 
-/* FINAL GALAXY THEME — use the user's image as the actual app backdrop */
-.app{
-  --gold:#a9dfff;
-  --bg:#06152f;
-  --panel:rgba(8,25,54,.78);
-  --line:rgba(151,207,255,.20);
-  --text:#f1f8ff;
-  --muted:#a9bfd8;
-  background:
-    linear-gradient(180deg,rgba(3,13,34,.34),rgba(4,18,43,.50)),
-    url('/everstar-memories/galaxy-background.webp') center center / cover fixed no-repeat !important;
-}
-.app.light{
-  --bg:#dceafa;
-  --panel:rgba(231,242,255,.84);
-  --line:rgba(43,99,155,.20);
-  --text:#142b49;
-  --muted:#536d8b;
-  background:
-    linear-gradient(180deg,rgba(218,235,255,.52),rgba(222,237,255,.70)),
-    url('/everstar-memories/galaxy-background.webp') center center / cover fixed no-repeat !important;
-}
 /* Keep all galaxy particles above the image and below the interface. */
 .galaxy-field{z-index:0!important;opacity:1!important;mix-blend-mode:screen;pointer-events:none}
 .main{position:relative;z-index:1}.sidebar{z-index:5}
@@ -413,24 +368,6 @@ body{background:#03122c!important}
 .orbit-art .orbit{border-color:rgba(155,211,255,.55)!important}
 .orbit-art .globe{box-shadow:0 0 55px rgba(90,170,255,.55),inset -13px -15px 25px #040713a6!important}
 @media(prefers-reduced-motion:reduce){.galaxy-ring,.galaxy-haze,.drifting-star{animation:none!important;will-change:auto!important}}
-
-/* Landscape galaxy wallpaper: fill the viewport without stretching. */
-.app{
-  background-image:
-    linear-gradient(rgba(3,12,31,.38),rgba(3,12,31,.48)),
-    url('/everstar-memories/galaxy-background.webp') !important;
-  background-size:cover !important;
-  background-position:center center !important;
-  background-repeat:no-repeat !important;
-  background-attachment:fixed !important;
-  background-color:#030c1f !important;
-}
-@media(max-width:700px){
-  .app{
-    background-attachment:scroll !important;
-    background-position:center center !important;
-  }
-}
 
 /* EVERSTAR — transparent glass universe, no wallpaper image */
 body{background:#061326!important}
