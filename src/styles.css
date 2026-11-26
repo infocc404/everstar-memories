@@ -269,3 +269,15 @@ body{background:#03122c!important}
  .constellation-sky{backdrop-filter:none;-webkit-backdrop-filter:none}
 }
 @media(prefers-reduced-motion:reduce){.app:after{animation:none!important}}
+
+/* EVERSTAR information architecture: calm, consistent content groups */
+.about-everstar{display:grid;grid-template-columns:minmax(240px,.82fr) minmax(0,1.4fr);gap:22px;margin:28px 0 34px;padding:clamp(20px,3vw,34px);border:1px solid rgba(210,232,255,.15);border-radius:26px;background:linear-gradient(135deg,rgba(15,35,69,.48),rgba(117,155,202,.09));backdrop-filter:blur(14px)}
+.about-intro{align-self:center;max-width:520px}.about-intro h2{font-size:clamp(23px,2.5vw,34px);line-height:1.2;margin:12px 0}.about-intro p{color:var(--muted,#b8c8df);line-height:1.8;margin:0}
+.about-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.about-card{min-width:0;padding:17px;border:1px solid rgba(214,233,255,.14);border-radius:18px;background:rgba(225,239,255,.055)}
+.about-card>span{display:grid;place-items:center;width:34px;height:34px;border-radius:11px;color:#d9ecff;background:rgba(137,190,255,.13)}
+.about-card h3{font-size:15px;margin:12px 0 6px}.about-card p{font-size:13px;line-height:1.65;color:var(--muted,#b8c8df);margin:0}
+.top-navigation{gap:clamp(4px,.65vw,10px)}.top-nav-button{white-space:nowrap}
+.content>*+*{scroll-margin-top:100px}
+@media(max-width:900px){.about-everstar{grid-template-columns:1fr}.about-intro{max-width:none}}
+@media(max-width:560px){.about-everstar{padding:17px;margin:20px 0}.about-grid{grid-template-columns:1fr}.about-card{padding:14px}}
