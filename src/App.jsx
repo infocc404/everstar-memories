@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { startTransition, useEffect, useMemo, useState } from 'react';
 import { Aperture, Bell, CalendarDays, ChevronRight, Grid2X2, LockKeyhole, LogOut, Menu, Moon, Plus, Search, Settings2, Sparkles, Star, Sun, Trash2, X, Paperclip, Image, CheckCircle2, AlertCircle } from 'lucide-react';
 import { supabase, supabaseConfigured } from './lib/supabase';
 import { createMemory, getMemory, deleteMemory, listMemories, listAttachments, uploadAttachment } from './lib/memories';
@@ -35,10 +35,10 @@ function I18n({ lang, children }) {
 
 const tx = (value) => localStorage.getItem('everstar.language') === 'ar' ? (AR_TRANSLATIONS[value] || value) : value;
 function LanguageSwitch({lang,setLang}) { return <button className="language-switch" type="button" onClick={()=>setLang(lang==='en'?'ar':'en')}>{lang==='en'?'عربي':'English'}</button>; }
-function GalaxyBackground() {
- const stars=Array.from({length:18},(_,i)=>({left:((i*37+11)%96)+'%',top:((i*61+7)%94)+'%',delay:-((i%9)*.7)+'s',duration:(5+i%6)+'s',size:(2+i%3)+'px'}));
+const GalaxyBackground = React.memo(function GalaxyBackground() {
+ const stars=Array.from({length:10},(_,i)=>({left:((i*37+11)%96)+'%',top:((i*61+7)%94)+'%',delay:-((i%9)*.7)+'s',duration:(5+i%6)+'s',size:(2+i%3)+'px'}));
  return <div className="galaxy-field" aria-hidden="true"><div className="galaxy-haze"/><div className="galaxy-ring ring-one"><i/></div><div className="galaxy-ring ring-two"><i/></div><div className="galaxy-ring ring-three"><i/></div>{stars.map((star,i)=><span key={i} className="drifting-star" style={{left:star.left,top:star.top,animationDelay:star.delay,animationDuration:star.duration,width:star.size,height:star.size}}/>)}</div>;
-}
+});
 
 const fmt = (value) => {
   if (!value) return '—';
@@ -79,6 +79,7 @@ export default function App() {
   const [authReady, setAuthReady] = useState(false);
   const [authMode, setAuthMode] = useState('login');
   const [page, setPage] = useState('overview');
+  function navigateTo(nextPage) { startTransition(() => setPage(nextPage)); }
   const [lang, setLang] = useState(() => localStorage.getItem('everstar.language') || 'en');
   const [memories, setMemories] = useState([]);
   const [notifications, setNotifications] = useState([]);
@@ -234,7 +235,7 @@ export default function App() {
     }
   }
 
-  async function signOut() { await supabase.auth.signOut(); setPage('overview'); }
+  async function signOut() { await supabase.auth.signOut(); navigateTo('overview'); }
 
   if (!supabaseConfigured) return <div className="setup-screen"><div className="setup-card"><Aperture size={36}/><div className="eyebrow">MEMORIES BEYOND TIME</div><h1>Connect your private universe.</h1><p>EVERSTAR is ready for its secure backend. Add your Supabase project URL and publishable key to a local <code>.env</code> file to continue.</p><pre>VITE_SUPABASE_URL=https://your-project.supabase.co<br/>VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-key</pre><p className="setup-foot">Do not put a service-role key or encryption key in this file. Those belong only in Supabase server secrets.</p></div></div>;
   if (!authReady) return <div className="setup-screen"><div className="setup-card"><Aperture size={34}/><p>Opening your universe…</p></div></div>;
@@ -244,8 +245,8 @@ export default function App() {
     <GalaxyBackground/><div className="nebula n1"/><div className="nebula n2"/>
     <main className="main">
       <header className="topbar topbar-universe">
-        <a className="brand brand-top" href="#/" onClick={(e)=>{e.preventDefault();setPage('overview')}}><span className="brand-icon"><Aperture/></span><span><b>everstar</b><small>MEMORIES BEYOND TIME</small></span></a>
-        <nav className="top-navigation" aria-label="Main navigation">{nav.map(([id,label,Icon])=><button key={id} className={'top-nav-button '+(page===id?'active':'')} onClick={()=>setPage(id)}><Icon size={15}/><span>{label}</span>{id==='capsules'&&locked.length>0?<i>{locked.length}</i>:null}</button>)}</nav>
+        <a className="brand brand-top" href="#/" onClick={(e)=>{e.preventDefault();navigateTo('overview')}}><span className="brand-icon"><Aperture/></span><span><b>everstar</b><small>MEMORIES BEYOND TIME</small></span></a>
+        <nav className="top-navigation" aria-label="Main navigation">{nav.map(([id,label,Icon])=><button key={id} className={'top-nav-button '+(page===id?'active':'')} onClick={()=>navigateTo(id)}><Icon size={15}/><span>{label}</span>{id==='capsules'&&locked.length>0?<i>{locked.length}</i>:null}</button>)}</nav>
         <div className="top-right"><LanguageSwitch lang={lang} setLang={setLang}/><button className="icon-btn" onClick={()=>setDark(!dark)} title="Toggle theme">{dark?<Sun size={17}/>:<Moon size={17}/>}</button><div className="notice-wrap"><button className="icon-btn" onClick={()=>setNoticeOpen(!noticeOpen)}><Bell size={17}/>{unread>0&&<i className="notice-dot"/>}</button>{noticeOpen&&<div className="notice-panel"><b>Notifications</b>{notifications.length?notifications.map(n=><button key={n.id} className={'notice-item '+(!n.read_at?'unread':'')} onClick={()=>markRead(n.id)}><span>{n.title}</span><small>{n.body}</small><time>{fmt(n.created_at)}</time></button>):<p>No notifications yet. New capsule openings will appear here.</p>}</div>}</div><button className="icon-btn account-btn" onClick={signOut} title="Sign out"><LogOut size={16}/></button></div>
       </header>
       <div className="content">
@@ -262,8 +263,8 @@ export default function App() {
             </div>
           </section>
           <section className="stats"><Stat icon={<Star/>} value={memories.length} label="MEMORIES KEPT"/><Stat icon={<LockKeyhole/>} value={locked.length} label="TIME CAPSULES" variant="lilac"/><Stat icon={<Sparkles/>} value={ready.length} label="READY TO REVISIT" variant="mint"/><div className="quote"><b>“</b><span>The smallest moments often leave<br/>the deepest light.</span></div></section>
-          <section className="section"><div className="section-head"><div><div className="eyebrow">YOUR CONSTELLATION</div><h2>Recent memories</h2></div><button className="link-btn" onClick={() => setPage('memories')}>Explore all <ChevronRight size={15}/></button></div><StarConstellation memories={memories.slice(0, 24)} onOpen={openMemory}/><div className="constellation-actions"><button className="gold-btn" onClick={() => setPage("memories")}>Explore all stars <ChevronRight size={15}/></button><button className="outline-btn" onClick={() => setModal(true)}><Plus size={15}/> Make a new memory</button></div></section>
-          <section className="capsule-promo"><span className="lock-symbol"><LockKeyhole/></span><div><div className="eyebrow">A MESSAGE FROM THE PAST</div><h3>{locked.length ? locked.length + ' memories are still becoming.' : 'Your next chapter is waiting.'}</h3><p>{locked.length ? 'Your sealed memories stay protected until their chosen opening date.' : 'Create a time capsule for the person you will be tomorrow.'}</p></div><button className="outline-btn" onClick={() => setPage('capsules')}>Visit time capsules <ChevronRight size={15}/></button></section>
+          <section className="section"><div className="section-head"><div><div className="eyebrow">YOUR CONSTELLATION</div><h2>Recent memories</h2></div><button className="link-btn" onClick={() => navigateTo('memories')}>Explore all <ChevronRight size={15}/></button></div><StarConstellation memories={memories.slice(0, 24)} onOpen={openMemory}/><div className="constellation-actions"><button className="gold-btn" onClick={() => navigateTo("memories")}>Explore all stars <ChevronRight size={15}/></button><button className="outline-btn" onClick={() => setModal(true)}><Plus size={15}/> Make a new memory</button></div></section>
+          <section className="capsule-promo"><span className="lock-symbol"><LockKeyhole/></span><div><div className="eyebrow">A MESSAGE FROM THE PAST</div><h3>{locked.length ? locked.length + ' memories are still becoming.' : 'Your next chapter is waiting.'}</h3><p>{locked.length ? 'Your sealed memories stay protected until their chosen opening date.' : 'Create a time capsule for the person you will be tomorrow.'}</p></div><button className="outline-btn" onClick={() => navigateTo('capsules')}>Visit time capsules <ChevronRight size={15}/></button></section>
         </>}
         {page === 'memories' && <><PageHead eyebrow="THE MOMENTS THAT MADE YOU" title="Your memories" desc="Every little thing you chose not to let disappear." action={() => setModal(true)}/><Toolbar search={search} setSearch={setSearch} filter={filter} setFilter={setFilter}/><StarConstellation memories={visible} onOpen={openMemory}/></>}
         {page === 'capsules' && <><PageHead eyebrow="SEALED WITH A PROMISE" title="Time capsules" desc="Messages from who you were, waiting for who you will become." action={() => setModal(true)}/><div className="capsule-note"><LockKeyhole/> Capsule contents are encrypted. The server will not release them before the opening date.</div>{locked.sort((a,b) => new Date(a.unlockAt) - new Date(b.unlockAt)).map((m) => <button className="capsule-row" key={m.id} onClick={() => openMemory(m)}><span className="lock-symbol"><LockKeyhole/></span><span className="capsule-title"><b>Sealed memory</b><small>Private capsule · saved {fmt(m.date)}</small></span><span className="unlock-date"><b>{fmt(m.unlockAt)}</b><small>{remaining(m.unlockAt)} days remaining</small></span><LockKeyhole/></button>)}{!locked.length && <Empty title="Your sky is open" text="No sealed capsules yet. Create one for a future you." onClick={() => setModal(true)}/>}<div className="section-head ready-head"><div className="eyebrow">THE MOMENT HAS ARRIVED</div><h2>Ready to revisit</h2></div><div className="cards">{ready.map((m, i) => <MemoryCard key={m.id} memory={m} index={i} onClick={() => openMemory(m)}/>)}</div></>}
