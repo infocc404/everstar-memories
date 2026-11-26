@@ -145,12 +145,12 @@ export default function OwnerDashboard({ supabase, session, lang = 'en' }) {
   async function setRole(user, role) {
     if (!window.confirm(t('Change this account role?','هل تريد تغيير صلاحية هذا الحساب؟'))) return;
     const { error: e } = await supabase.rpc('owner_set_user_role', { p_user_id: user.user_id, p_role: role });
-    if (e) setError(e.message); else { setMessage(t('User role updated.','تم تحديث صلاحية المستخدم.')); loadUsers(); load(); }
+    if (e) setError(e.message); else { setMessage(t('User role updated.','تم تحديث صلاحية المستخدم.')); loadUsers(query); load(); }
   }
   async function setBan(user, banned) {
     if (!window.confirm(banned ? t('Suspend this account?','هل تريد إيقاف هذا الحساب؟') : t('Reactivate this account?','هل تريد إعادة تفعيل هذا الحساب؟'))) return;
     const { error: e } = await supabase.rpc('owner_set_user_ban', { p_user_id: user.user_id, p_banned: banned });
-    if (e) setError(e.message); else { setMessage(t('Account status updated.','تم تحديث حالة الحساب.')); loadUsers(); load(); }
+    if (e) setError(e.message); else { setMessage(t('Account status updated.','تم تحديث حالة الحساب.')); loadUsers(query); load(); }
   }
   async function resolveAlert(item) {
     const { error: e } = await supabase.from('admin_alerts').update({ resolved_at: new Date().toISOString() }).eq('id', item.id);
@@ -164,7 +164,7 @@ export default function OwnerDashboard({ supabase, session, lang = 'en' }) {
     {mfaError && <div className="owner-error"><AlertTriangle size={16}/>{mfaError}</div>}
     <div className="owner-panel owner-form">
       {!mfaChallengeId ? <button className="gold-btn" disabled={mfaBusy || aal === 'checking'} onClick={startMfaChallenge}>{mfaBusy ? t('Please wait…','يرجى الانتظار…') : mfaFactors.some(x=>x.status==='verified') ? t('Send authenticator challenge','ابدأ التحقق') : t('Set up owner authenticator','إعداد مصادقة المالك')}</button> : <>
-        <label>{t('Six-digit code','رمز التحقق المكوّن من ستة أرقام')}<input inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={mfaCode} onChange={e=>setMfaCode(e.target.value.replace(/\\D/g,'').slice(0,6))}/></label>
+        <label>{t('Six-digit code','رمز التحقق المكوّن من ستة أرقام')}<input inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={mfaCode} onChange={e=>setMfaCode(e.target.value.replace(/\D/g,'').slice(0,6))}/></label>
         <button className="gold-btn" disabled={mfaBusy || mfaCode.length!==6} onClick={verifyMfaCode}>{mfaBusy ? t('Verifying…','جارٍ التحقق…') : t('Verify and open owner panel','تحقق وافتح لوحة المالك')}</button>
       </>}
     </div>
