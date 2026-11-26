@@ -281,3 +281,50 @@ body{background:#03122c!important}
 .content>*+*{scroll-margin-top:100px}
 @media(max-width:900px){.about-everstar{grid-template-columns:1fr}.about-intro{max-width:none}}
 @media(max-width:560px){.about-everstar{padding:17px;margin:20px 0}.about-grid{grid-template-columns:1fr}.about-card{padding:14px}}
+
+
+/* EVERSTAR performance pass: keep the galaxy visual, reduce expensive repaints */
+.drifting-star{
+  animation:star-drift 11s ease-in-out infinite alternate!important;
+  will-change:transform,opacity;
+  box-shadow:0 0 5px 1px rgba(120,211,255,.55)!important;
+}
+.galaxy-ring,.galaxy-ring.ring-one,.galaxy-ring.ring-two,.galaxy-ring.ring-three{
+  animation:none!important;
+}
+.galaxy-haze{filter:none!important;opacity:.8}
+.nebula{filter:blur(54px)!important;opacity:.09!important}
+.app:after{
+  animation:crystal-ocean 26s ease-in-out infinite alternate!important;
+  background-size:auto!important;
+}
+@keyframes crystal-ocean{
+  from{transform:translate3d(-.5%,0,0) scaleY(1)}
+  to{transform:translate3d(.5%,-3px,0) scaleY(1.015)}
+}
+.topbar-universe{
+  -webkit-backdrop-filter:blur(10px) saturate(125%)!important;
+  backdrop-filter:blur(10px) saturate(125%)!important;
+}
+.constellation-sky{
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important;
+}
+.info-card,.settings-list,.timeline-row>span,.capsule-row,.capsule-promo,
+.modal,.detail,.auth-card,.setup-card,.notice-panel{
+  -webkit-backdrop-filter:blur(9px) saturate(120%)!important;
+  backdrop-filter:blur(9px) saturate(120%)!important;
+}
+.top-nav-button,.gold-btn,.outline-btn,.memory-card,.constellation-star{
+  transition:background-color .16s ease,border-color .16s ease,color .16s ease,box-shadow .16s ease,transform .16s ease!important;
+}
+@media(max-width:700px){
+  .drifting-star{animation-duration:15s!important;box-shadow:0 0 4px 1px rgba(120,211,255,.4)!important}
+  .galaxy-haze{opacity:.45}
+  .app:after{animation:none!important;opacity:.5}
+  .topbar-universe,.info-card,.settings-list,.timeline-row>span,.capsule-row,.capsule-promo,
+  .modal,.detail,.auth-card,.setup-card,.notice-panel{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+}
+@media(prefers-reduced-motion:reduce){
+  .drifting-star,.app:after{animation:none!important;will-change:auto!important}
+}
