@@ -42,12 +42,14 @@ jobs:
           supabase login --token "$SUPABASE_ACCESS_TOKEN"
           supabase link --project-ref "$SUPABASE_PROJECT_REF"
 
-      - name: Export database schema and data
+      - name: Export application, Auth and Storage database schemas/data
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: |
-          supabase db dump --db-url "$SUPABASE_DB_URL" -f schema.sql
-          supabase db dump --db-url "$SUPABASE_DB_URL" -f data.sql --use-copy --data-only -x "storage.buckets_vectors" -x "storage.vector_indexes"
+          docker run --rm --network host -v "$PWD:/backup" -w /backup \
+            postgres:17 pg_dump --format=custom --no-owner --no-acl \
+            --schema=public --schema=auth --schema=storage \
+            --file=everstar.dump "$SUPABASE_DB_URL"
 
       - name: Export private memory attachments
         env:
@@ -60,12 +62,12 @@ jobs:
         env:
           BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
         run: |
-          tar -czf everstar-backup.tar.gz schema.sql data.sql storage
+          tar -czf everstar-backup.tar.gz everstar.dump storage
           gpg --batch --yes --pinentry-mode loopback --symmetric --cipher-algo AES256 \
             --passphrase "$BACKUP_ENCRYPTION_KEY" \
             --output "everstar-backup-$(date -u +%Y%m%dT%H%M%SZ).tar.gz.gpg" \
             everstar-backup.tar.gz
-          rm -f schema.sql data.sql everstar-backup.tar.gz
+          rm -f everstar.dump everstar-backup.tar.gz
           rm -rf storage
 
       - name: Store encrypted backup for 30 days
