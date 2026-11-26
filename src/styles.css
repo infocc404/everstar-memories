@@ -431,3 +431,27 @@ body{background:#03122c!important}
     background-position:center center !important;
   }
 }
+
+/* EVERSTAR — transparent glass universe, no wallpaper image */
+body{background:#061326!important}
+.app{--gold:#c5e7ff!important;--bg:rgba(5,18,38,.34)!important;--panel:rgba(12,34,62,.42)!important;--line:rgba(188,222,255,.20)!important;--text:#f1f7ff!important;--muted:#b1c5dc!important;background:transparent!important;isolation:isolate}
+.app.light{--bg:rgba(224,239,255,.36)!important;--panel:rgba(239,247,255,.48)!important;--line:rgba(69,119,169,.20)!important;--text:#142b46!important;--muted:#58718c!important;background:transparent!important}
+.app:before{background:radial-gradient(ellipse at 18% 18%,rgba(65,151,231,.20),transparent 42%),radial-gradient(ellipse at 82% 74%,rgba(101,184,255,.13),transparent 40%),linear-gradient(145deg,#061326 0%,#0a2342 52%,#07172d 100%)!important}
+.app:after{opacity:0!important;animation:none!important;display:none!important}
+.galaxy-field{z-index:0!important;opacity:1!important;pointer-events:none!important}
+.galaxy-haze{background:radial-gradient(ellipse at center,rgba(99,174,255,.14),rgba(88,151,224,.045) 42%,transparent 72%)!important;filter:none!important;opacity:.7!important}
+.galaxy-ring,.galaxy-ring.ring-one,.galaxy-ring.ring-two,.galaxy-ring.ring-three{animation:orbit-slow 78s linear infinite!important;transform-origin:50% 50%!important;will-change:rotate;border-color:rgba(170,215,255,.27)!important;box-shadow:0 0 22px rgba(100,175,255,.07)!important}
+.galaxy-ring.ring-two{animation-duration:104s!important;animation-direction:reverse!important;border-color:rgba(198,226,255,.22)!important}
+.galaxy-ring.ring-three{animation-duration:136s!important;border-color:rgba(125,195,255,.24)!important}
+.galaxy-ring i,.ring-two i,.ring-three i{width:7px!important;height:7px!important;background:#f1f9ff!important;box-shadow:0 0 8px 3px rgba(166,218,255,.8),0 0 22px rgba(103,180,255,.6)!important}
+.drifting-star{background:#f5fbff!important;box-shadow:0 0 5px 1px rgba(183,224,255,.8),0 0 13px rgba(112,183,255,.38)!important;opacity:.72!important;animation:star-drift 8s ease-in-out infinite alternate!important;will-change:transform,opacity}
+.drifting-star:nth-of-type(3n){background:#b8dcff!important}.drifting-star:nth-of-type(4n){background:#fff!important}
+.sidebar,.topbar,.topbar-universe,.info-card,.settings-list,.timeline-row>span,.capsule-row,.capsule-promo,.memory-card,.about-everstar,.about-card,.modal,.detail,.auth-card,.setup-card,.notice-panel{background:rgba(10,29,53,.40)!important;border-color:rgba(184,218,250,.19)!important;-webkit-backdrop-filter:blur(14px) saturate(125%)!important;backdrop-filter:blur(14px) saturate(125%)!important}
+.light .sidebar,.light .topbar,.light .topbar-universe,.light .info-card,.light .settings-list,.light .timeline-row>span,.light .capsule-row,.light .capsule-promo,.light .memory-card,.light .about-everstar,.light .about-card,.light .modal,.light .detail{background:rgba(232,243,255,.48)!important}
+.topbar{background:rgba(7,23,43,.32)!important}.sidebar{background:rgba(7,23,43,.34)!important}
+.top-nav-button.active{background:rgba(135,199,255,.14)!important;border-color:rgba(175,220,255,.38)!important;box-shadow:0 0 18px rgba(92,169,245,.12)!important}
+.brand,.brand-icon,.eyebrow,.link-btn,.hero h1 em,.top-nav-button.active svg{color:#c5e7ff!important}
+.gold-btn{background:linear-gradient(110deg,#d8efff,#91c9f5)!important;color:#09213a!important;box-shadow:0 6px 22px rgba(96,174,239,.18)!important}
+.orbit-art .orbit{border-color:rgba(180,220,255,.4)!important}.orbit-art .globe{background:radial-gradient(circle at 34% 30%,#f3fbff,#9bc9ec 38%,#345b83 70%,#10253e 82%)!important;box-shadow:0 0 42px rgba(117,190,255,.35)!important}
+@media(max-width:700px){.galaxy-ring,.galaxy-ring.ring-one,.galaxy-ring.ring-two,.galaxy-ring.ring-three{animation-duration:170s!important}.drifting-star{animation-duration:12s!important}.sidebar,.topbar,.info-card,.settings-list,.timeline-row>span,.capsule-row,.capsule-promo,.memory-card,.about-everstar,.about-card,.modal,.detail,.notice-panel{backdrop-filter:blur(8px)!important;-webkit-backdrop-filter:blur(8px)!important}}
+@media(prefers-reduced-motion:reduce){.galaxy-ring,.galaxy-haze,.drifting-star{animation:none!important;will-change:auto!important}}
