@@ -65,8 +65,28 @@ jobs:
             --passphrase "$BACKUP_ENCRYPTION_KEY" \
             --output "everstar-backup-$(date -u +%Y%m%dT%H%M%SZ).tar.gz.gpg" \
             everstar-backup.tar.gz
+
+      - name: Verify encrypted backup and PostgreSQL dump
+        env:
+          BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
+        run: |
+          backup_file="$(find . -maxdepth 1 -name 'everstar-backup-*.tar.gz.gpg' -print -quit)"
+          test -n "$backup_file"
+          gpg --batch --yes --pinentry-mode loopback --passphrase "$BACKUP_ENCRYPTION_KEY" \
+            --decrypt --output /tmp/everstar-verify.tar.gz "$backup_file"
+          tar -tzf /tmp/everstar-verify.tar.gz >/dev/null
+          mkdir -p /tmp/everstar-restore-check
+          tar -xzf /tmp/everstar-verify.tar.gz -C /tmp/everstar-restore-check
+          test -s /tmp/everstar-restore-check/everstar.dump
+          docker run --rm -v /tmp/everstar-restore-check:/backup postgres:17 \
+            pg_restore --list /backup/everstar.dump >/dev/null
+          test -d /tmp/everstar-restore-check/storage/memory-attachments
+          echo "Encrypted archive integrity and PostgreSQL dump catalog verified."
+
+      - name: Remove plaintext backup material
+        run: |
           rm -f everstar.dump everstar-backup.tar.gz
-          rm -rf storage
+          rm -rf storage /tmp/everstar-verify.tar.gz /tmp/everstar-restore-check
 
       - name: Store encrypted backup for 30 days
         uses: actions/upload-artifact@v4
