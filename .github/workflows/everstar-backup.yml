@@ -53,7 +53,7 @@ jobs:
         env:
           SUPABASE_PROJECT_REF: cehddtgitnrquvsaoztx
         run: |
-          mkdir -p storage
+          mkdir -p storage/memory-attachments
           supabase storage cp ss:///memory-attachments ./storage/memory-attachments --recursive --experimental --remote="$SUPABASE_PROJECT_REF"
 
       - name: Encrypt backup archive
