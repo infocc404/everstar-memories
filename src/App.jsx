@@ -11,6 +11,12 @@ Object.assign(AR_TRANSLATIONS, { 'Owner panel':'لوحة المالك', 'OWNER C
 Object.assign(AR_TRANSLATIONS, { 'EVERSTAR GUIDE':'دليل EVERSTAR', 'PERSONALIZE YOUR SPACE':'خصص مساحتك', 'How it works':'كيف يعمل EVERSTAR', 'Settings & preferences':'الإعدادات والتفضيلات', 'Toggle theme':'تبديل المظهر', 'A moment worth keeping...':'لحظة تستحق الاحتفاظ بها...', 'Choose a password with at least 8 characters.':'اختر كلمة مرور من 8 أحرف على الأقل.', 'The passwords do not match.':'كلمتا المرور غير متطابقتين.', 'Check your email and confirm your address to finish creating your account.':'تحقق من بريدك الإلكتروني وأكد عنوانك لإكمال إنشاء الحساب.', 'Your account is ready. Welcome to EVERSTAR.':'حسابك جاهز. أهلاً بك في EVERSTAR.', 'If an account exists for that email, a password reset link has been sent.':'إذا كان هناك حساب بهذا البريد، فقد أرسلنا رابط إعادة تعيين كلمة المرور.' });
 
 Object.assign(AR_TRANSLATIONS, {"Your private universe, made for memories that matter.":"عالمك الخاص، صُمّم للذكريات التي تستحق البقاء.","EVERSTAR is a private space to preserve the moments of your life.":"EVERSTAR مساحة خاصة لحفظ لحظات حياتك.","Write a memory, add photos or files, and let it become a star in your personal galaxy.":"اكتب ذكرى وأرفق الصور أو الملفات، ودعها تصبح نجمة في مجرتك الخاصة.","Create a time capsule and choose when it can be opened. Its contents stay encrypted until that date.":"أنشئ كبسولة زمنية وحدد موعد فتحها. تبقى محتوياتها مشفّرة حتى ذلك التاريخ.","Your memories follow you across devices when you sign in to your account.":"ذكرياتك ترافقك عبر أجهزتك عند تسجيل الدخول إلى حسابك.","Your private universe":"عالمك الخاص","Preserve moments":"احفظ اللحظات","Seal for the future":"اختمها للمستقبل","Revisit your story":"استرجع قصتك","Private by design":"الخصوصية أولاً","EVERSTAR keeps your memories in one personal place.":"يجمع EVERSTAR ذكرياتك في مساحة شخصية واحدة.","Save moments as glowing stars, search them, and explore them in your timeline.":"احفظ لحظاتك كنجوم مضيئة، وابحث عنها واستكشفها في خطك الزمني.","Choose a future date for a capsule. The app keeps it sealed until the date arrives.":"اختر تاريخاً مستقبلياً للكبسولة، وسيبقيها التطبيق مختومة حتى يحين موعدها.","Receive an alert when a capsule is ready, and revisit the memory whenever you wish.":"تلقَّ تنبيهاً عندما تصبح الكبسولة جاهزة، واسترجع الذكرى متى شئت.","Enable device notifications":"تفعيل إشعارات الجهاز","Device notifications":"إشعارات الجهاز","Allow EVERSTAR to notify this device when a capsule opens.":"اسمح لـ EVERSTAR بإشعار هذا الجهاز عند فتح كبسولة زمنية.","Notifications are enabled on this device.":"إشعارات هذا الجهاز مفعّلة.","Notifications are blocked by your browser. Change site permissions in your browser settings.":"الإشعارات محظورة من المتصفح. غيّر أذونات الموقع من إعدادات المتصفح.","Enable notifications":"تفعيل الإشعارات","Your browser does not support push notifications.":"متصفحك لا يدعم الإشعارات الفورية.","Allow notifications in the browser prompt to continue.":"اسمح بالإشعارات في نافذة المتصفح للمتابعة.","Device notification setup is not available yet.":"إعداد إشعارات الجهاز غير متاح بعد.","Notifications enabled for this device.":"تم تفعيل الإشعارات لهذا الجهاز.","Could not enable notifications. Please try again.":"تعذر تفعيل الإشعارات. حاول مرة أخرى.","Signed in successfully.":"تم تسجيل الدخول بنجاح.","Sign in failed.":"فشل تسجيل الدخول.","Memory deleted.":"تم حذف الذكرى.","Memory copied.":"تم نسخ الذكرى.","Could not load your universe.":"تعذر تحميل عالمك.","Could not save this memory.":"تعذر حفظ هذه الذكرى.","The opening date cannot be before the memory date.":"لا يمكن أن يسبق موعد الفتح تاريخ الذكرى.","Search memories":"ابحث في الذكريات","Search":"بحث","Saved":"تاريخ الحفظ","Annual reminder":"التذكير السنوي","days remaining":"يوم متبقٍ","Unlocked":"مفتوحة","Locked":"مختومة","Light theme":"الوضع الفاتح","Dark theme":"الوضع الداكن","Toggle theme":"تبديل المظهر","Sign out":"تسجيل الخروج","Main navigation":"التنقل الرئيسي"});
+Object.assign(AR_TRANSLATIONS, {
+  'New registrations are currently disabled.':'التسجيلات الجديدة متوقفة حالياً.',
+  'Password safety verification is temporarily unavailable. Please try again.':'تعذر التحقق من أمان كلمة المرور مؤقتاً. حاول مرة أخرى.',
+  'This password appears in known data breaches. Please choose a different password.':'كلمة المرور هذه ظهرت في تسريبات معروفة. اختر كلمة مرور مختلفة.'
+});
+
 function I18n({ lang, children }) {
  if (lang !== 'ar') return children;
  const translateText = (value) => {
@@ -117,7 +123,7 @@ export default function App() {
   useEffect(() => {
     if (!supabase) return;
     let active = true;
-    supabase.rpc('get_app_access_status').then(({ data, error }) => {
+    supabase.from('app_access_controls').select('maintenance_mode,allow_signups').eq('id', true).maybeSingle().then(({ data, error }) => {
       if (active && !error) setMaintenanceMode(data?.maintenance_mode === true);
     }).catch(() => {});
     return () => { active = false; };
@@ -322,7 +328,7 @@ function AuthPanel({ mode, setMode, onDone, lang, setLang }) {
   const [error, setError] = useState('');
   useEffect(() => {
     let active = true;
-    supabase.rpc('get_app_access_status').then(({ data, error: accessError }) => {
+    supabase.from('app_access_controls').select('maintenance_mode,allow_signups').eq('id', true).maybeSingle().then(({ data, error: accessError }) => {
       if (active) setSignupAllowed(!accessError && data?.allow_signups === true);
     }).catch(() => { if (active) setSignupAllowed(false); });
     return () => { active = false; };
@@ -332,7 +338,7 @@ function AuthPanel({ mode, setMode, onDone, lang, setLang }) {
     event.preventDefault(); setBusy(true); setError(''); setMessage('');
     try {
       if (mode === 'signup') {
-        const { data: access, error: accessError } = await supabase.rpc('get_app_access_status');
+        const { data: access, error: accessError } = await supabase.from('app_access_controls').select('maintenance_mode,allow_signups').eq('id', true).maybeSingle();
         if (accessError) throw accessError;
         if (access?.allow_signups !== true) throw new Error('New registrations are currently disabled.');
         if (password.length < 8) throw new Error('Choose a password with at least 8 characters.');
