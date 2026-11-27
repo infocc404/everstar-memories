@@ -32,9 +32,9 @@ export async function listMemories() {
 }
 
 export async function createMemory(memory) {
-  const unlockAt = memory.unlockDate
-    ? new Date(`${memory.unlockDate}T00:00:00`).toISOString()
-    : null;
+  // Capsules are calendar-date based; send YYYY-MM-DD so the server can
+  // validate the opening date consistently without client timezone shifts.
+  const unlockAt = memory.unlockDate || null;
   const data = await invoke('memory-api/memories', {
     method: 'POST',
     body: { title: memory.title, content: memory.body, memoryDate: memory.date, mood: memory.mood, color: memory.color, unlockAt },
