@@ -48,7 +48,7 @@ jobs:
           import { mkdir, writeFile } from 'node:fs/promises';
           import path from 'node:path';
 
-          const base = process.env.SUPABASE_URL.replace(/\\/$/, '');
+          const base = process.env.SUPABASE_URL.replace(/\/$/, '');
           const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
           const bucket = 'memory-attachments';
           const root = path.resolve('storage', bucket);
