@@ -1,5 +1,5 @@
 import React, { startTransition, useEffect, useMemo, useState } from 'react';
-import OwnerDashboard from './components/OwnerDashboard';
+const OwnerDashboard = React.lazy(() => import('./components/OwnerDashboard'));
 import { Aperture, Bell, CalendarDays, ChevronRight, Grid2X2, LockKeyhole, LogOut, Menu, Moon, Plus, Search, Settings2, Sparkles, Star, Sun, Trash2, X, Paperclip, Image, CheckCircle2, AlertCircle, ShieldCheck } from 'lucide-react';
 import { supabase, supabaseConfigured } from './lib/supabase';
 import { createMemory, getMemory, deleteMemory, listMemories, listAttachments, uploadAttachment } from './lib/memories';
@@ -255,7 +255,7 @@ export default function App() {
       </header>
       <div className="content">
         {error && <div className="inline-error"><AlertCircle size={16}/>{error}<button onClick={() => setError('')}><X size={14}/></button></div>}
-        {page === 'owner' && isOwner && <OwnerDashboard supabase={supabase} session={session} lang={lang}/>}
+        {page === 'owner' && isOwner && <React.Suspense fallback={<div className="owner-loading">Loading owner controls…</div>}><OwnerDashboard supabase={supabase} session={session} lang={lang}/></React.Suspense>}
         {page === 'overview' && <>
           <section className="hero"><div className="eyebrow"><Sparkles size={13}/> A LITTLE SPACE, JUST FOR YOU</div><h1>Your life, written<br/><em>in the stars.</em></h1><p>Some moments pass. The ones that matter deserve a place in the universe — and a chance to find you again.</p><button className="gold-btn" onClick={() => setModal(true)}><Plus size={17}/> Preserve a moment <span>↗</span></button><div className="orbit-art"><div className="orbit o1"/><div className="orbit o2"/><div className="globe"><Star fill="currentColor" size={28}/></div><i>✦</i><b>✧</b><small>·</small></div><div className="hero-bottom"><span>✦ &nbsp; Every memory is a world.</span><span>YOUR PRIVATE UNIVERSE</span></div></section>
           <section className="about-everstar">
