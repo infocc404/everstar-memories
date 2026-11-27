@@ -19,26 +19,15 @@ jobs:
     steps:
       - name: Check required secrets
         env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
         run: |
-          test -n "$SUPABASE_ACCESS_TOKEN" || (echo "Missing SUPABASE_ACCESS_TOKEN" && exit 1)
           test -n "$SUPABASE_DB_URL" || (echo "Missing SUPABASE_DB_URL" && exit 1)
+          test -n "$SUPABASE_SERVICE_ROLE_KEY" || (echo "Missing SUPABASE_SERVICE_ROLE_KEY" && exit 1)
           test -n "$BACKUP_ENCRYPTION_KEY" || (echo "Missing BACKUP_ENCRYPTION_KEY" && exit 1)
 
       - uses: actions/checkout@v4
-
-      - name: Install Supabase CLI
-        uses: supabase/setup-cli@v1
-        with:
-          version: latest
-
-      - name: Authenticate Supabase CLI
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-        run: |
-          supabase login --token "$SUPABASE_ACCESS_TOKEN"
 
       - name: Export application, Auth and Storage database schemas/data
         env:
@@ -51,10 +40,55 @@ jobs:
 
       - name: Export private memory attachments
         env:
-          SUPABASE_PROJECT_REF: cehddtgitnrquvsaoztx
+          SUPABASE_URL: https://cehddtgitnrquvsaoztx.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
           mkdir -p storage/memory-attachments
-          supabase storage cp ss:///memory-attachments ./storage/memory-attachments --recursive --experimental --remote="$SUPABASE_PROJECT_REF"
+          node --input-type=module <<'NODE'
+          import { mkdir, writeFile } from 'node:fs/promises';
+          import path from 'node:path';
+
+          const base = process.env.SUPABASE_URL.replace(/\\/$/, '');
+          const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+          const bucket = 'memory-attachments';
+          const root = path.resolve('storage', bucket);
+          const headers = { apikey: key, Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' };
+          await mkdir(root, { recursive: true });
+
+          async function listFolder(prefix = '') {
+            let offset = 0;
+            while (true) {
+              const response = await fetch(`${base}/storage/v1/object/list/${bucket}`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({ prefix, limit: 100, offset, sortBy: { column: 'name', order: 'asc' } })
+              });
+              if (!response.ok) throw new Error(`Storage listing failed (${response.status}) for ${prefix}`);
+              const entries = await response.json();
+              if (!Array.isArray(entries)) throw new Error('Unexpected Storage listing response');
+              for (const entry of entries) {
+                const relative = prefix ? `${prefix}/${entry.name}` : entry.name;
+                if (entry.id == null && entry.metadata == null) {
+                  await listFolder(relative);
+                  continue;
+                }
+                const objectPath = relative.split('/').map(encodeURIComponent).join('/');
+                const download = await fetch(`${base}/storage/v1/object/authenticated/${bucket}/${objectPath}`, {
+                  headers: { apikey: key, Authorization: 'Bearer ' + key }
+                });
+                if (!download.ok) throw new Error(`Storage download failed (${download.status}) for ${relative}`);
+                const destination = path.resolve(root, ...relative.split('/'));
+                if (!destination.startsWith(root + path.sep)) throw new Error('Unsafe storage object path');
+                await mkdir(path.dirname(destination), { recursive: true });
+                await writeFile(destination, new Uint8Array(await download.arrayBuffer()));
+              }
+              if (entries.length < 100) break;
+              offset += entries.length;
+            }
+          }
+
+          await listFolder();
+          NODE
 
       - name: Encrypt backup archive
         env:
