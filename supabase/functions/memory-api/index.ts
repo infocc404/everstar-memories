@@ -113,15 +113,23 @@ Deno.serve(async (req: Request) => {
       const memoryDate = typeof body.memoryDate === "string" ? body.memoryDate : "";
       const mood = typeof body.mood === "string" ? body.mood : "Hopeful";
       const color = typeof body.color === "string" ? body.color : "#e6bd79";
+      const parsedMemoryDate = new Date(`${memoryDate}T00:00:00.000Z`);
       if (!title || title.length > 160 || !content.trim() || content.length > 200000 ||
-          !/^\d{4}-\d{2}-\d{2}$/.test(memoryDate) || mood.length < 1 || mood.length > 32 || !/^#[0-9a-fA-F]{6}$/.test(color)) {
-        return json({ error: "Title (1–160 characters) and content (1–200000 characters) are required" }, 400, origin);
+          !/^\d{4}-\d{2}-\d{2}$/.test(memoryDate) ||
+          !Number.isFinite(parsedMemoryDate.getTime()) || parsedMemoryDate.toISOString().slice(0, 10) !== memoryDate ||
+          mood.length < 1 || mood.length > 32 || !/^#[0-9a-fA-F]{6}$/.test(color)) {
+        return json({ error: "Invalid memory details. Check the title, content, date, mood and colour." }, 400, origin);
       }
       let unlockDate: string | null = null;
       if (unlockAt !== null) {
-        const date = new Date(unlockAt);
-        if (!Number.isFinite(date.getTime())) return json({ error: "Invalid unlock date" }, 400, origin);
-        unlockDate = date.toISOString();
+        if (typeof unlockAt !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(unlockAt) || unlockAt < memoryDate) {
+          return json({ error: "The capsule opening date must be a valid date on or after the memory date." }, 400, origin);
+        }
+        const parsedUnlockDate = new Date(`${unlockAt}T00:00:00.000Z`);
+        if (!Number.isFinite(parsedUnlockDate.getTime()) || parsedUnlockDate.toISOString().slice(0, 10) !== unlockAt) {
+          return json({ error: "Invalid unlock date" }, 400, origin);
+        }
+        unlockDate = parsedUnlockDate.toISOString();
       }
       const memoryId = crypto.randomUUID();
       const encrypted = await encryptContent(content, user.id, memoryId);
