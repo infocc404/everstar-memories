@@ -79,6 +79,7 @@ function StarConstellation({ memories, onOpen }) {
 export default function App() {
   const [session, setSession] = useState(null);
   const [authReady, setAuthReady] = useState(false);
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [authMode, setAuthMode] = useState('login');
   const [page, setPage] = useState('overview');
   function navigateTo(nextPage) { startTransition(() => setPage(nextPage)); }
@@ -112,6 +113,15 @@ export default function App() {
     });
     return () => listener.subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (!supabase) return;
+    let active = true;
+    supabase.rpc('get_app_access_status').then(({ data, error }) => {
+      if (active && !error) setMaintenanceMode(data?.maintenance_mode === true);
+    }).catch(() => {});
+    return () => { active = false; };
+  }, [session?.user?.id]);
 
   useEffect(() => { localStorage.setItem('everstar.theme', dark ? 'dark' : 'light'); }, [dark]);
   useEffect(() => { localStorage.setItem('everstar.language', lang); document.documentElement.lang = lang; document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr'; }, [lang]);
@@ -244,6 +254,8 @@ export default function App() {
   if (!supabaseConfigured) return <div className="setup-screen"><div className="setup-card"><Aperture size={36}/><div className="eyebrow">MEMORIES BEYOND TIME</div><h1>Connect your private universe.</h1><p>EVERSTAR is ready for its secure backend. Add your Supabase project URL and publishable key to a local <code>.env</code> file to continue.</p><pre>VITE_SUPABASE_URL=https://your-project.supabase.co<br/>VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-key</pre><p className="setup-foot">Do not put a service-role key or encryption key in this file. Those belong only in Supabase server secrets.</p></div></div>;
   if (!authReady) return <div className="setup-screen"><div className="setup-card"><Aperture size={34}/><p>Opening your universe…</p></div></div>;
   if (!session || authMode === 'update') return <I18n lang={lang}><AuthPanel mode={authMode} setMode={setAuthMode} onDone={() => setAuthMode('login')} lang={lang} setLang={setLang} /></I18n>;
+  const isOwner = session.user.app_metadata?.role === 'owner';
+  if (maintenanceMode && !isOwner) return <I18n lang={lang}><div className="setup-screen"><div className="setup-card"><Aperture size={36}/><div className="eyebrow">EVERSTAR MEMORIES</div><h1>{lang === 'ar' ? 'التطبيق في وضع الصيانة' : 'EVERSTAR is under maintenance'}</h1><p>{lang === 'ar' ? 'نعمل على تحسين تجربتك. يرجى العودة بعد قليل.' : 'We are improving your experience. Please check back soon.'}</p><button className="outline-btn" onClick={signOut}>{lang === 'ar' ? 'تسجيل الخروج' : 'Sign out'}</button></div></div></I18n>;
 
   return <I18n lang={lang}><div className={'app ' + (dark ? 'dark' : 'light')} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
     <GalaxyBackground/><div className="nebula n1"/><div className="nebula n2"/>
@@ -285,20 +297,48 @@ export default function App() {
   </div></I18n>;
 }
 
+async function assertPasswordNotBreached(password) {
+  const digest = await crypto.subtle.digest('SHA-1', new TextEncoder().encode(password));
+  const hash = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('').toUpperCase();
+  const response = await fetch('https://api.pwnedpasswords.com/range/' + hash.slice(0, 5), {
+    headers: { 'Add-Padding': 'true' },
+    cache: 'no-store'
+  });
+  if (!response.ok) throw new Error('Password safety verification is temporarily unavailable. Please try again.');
+  const suffix = hash.slice(5);
+  const compromised = (await response.text()).split(/\\r?\\n/).some(line => {
+    const [candidate, count] = line.trim().split(':');
+    return candidate === suffix && Number(count) > 0;
+  });
+  if (compromised) throw new Error('This password appears in known data breaches. Please choose a different password.');
+}
+
 function AuthPanel({ mode, setMode, onDone, lang, setLang }) {
+  const [signupAllowed, setSignupAllowed] = useState(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  useEffect(() => {
+    let active = true;
+    supabase.rpc('get_app_access_status').then(({ data, error: accessError }) => {
+      if (active) setSignupAllowed(!accessError && data?.allow_signups === true);
+    }).catch(() => { if (active) setSignupAllowed(false); });
+    return () => { active = false; };
+  }, []);
   const title = mode === 'signup' ? 'Create your universe.' : mode === 'forgot' ? 'Find your way back.' : mode === 'update' ? 'A new key to your universe.' : 'Welcome back to your universe.';
   async function submit(event) {
     event.preventDefault(); setBusy(true); setError(''); setMessage('');
     try {
       if (mode === 'signup') {
+        const { data: access, error: accessError } = await supabase.rpc('get_app_access_status');
+        if (accessError) throw accessError;
+        if (access?.allow_signups !== true) throw new Error('New registrations are currently disabled.');
         if (password.length < 8) throw new Error('Choose a password with at least 8 characters.');
         if (password !== confirm) throw new Error('The passwords do not match.');
+        await assertPasswordNotBreached(password);
         const redirectUrl = new URL(import.meta.env.BASE_URL, window.location.origin).toString();
         const { data, error: e } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: redirectUrl } });
         if (e) throw e;
@@ -311,6 +351,7 @@ function AuthPanel({ mode, setMode, onDone, lang, setLang }) {
       } else if (mode === 'update') {
         if (password.length < 8) throw new Error('Choose a password with at least 8 characters.');
         if (password !== confirm) throw new Error('The passwords do not match.');
+        await assertPasswordNotBreached(password);
         const { error: e } = await supabase.auth.updateUser({ password });
         if (e) throw e;
         setMessage('Your password has been updated. You can continue.');
@@ -322,7 +363,7 @@ function AuthPanel({ mode, setMode, onDone, lang, setLang }) {
     } catch (e) { setError(e.message || 'Authentication failed.'); }
     finally { setBusy(false); }
   }
-  return <I18n lang={lang}><div className="auth-screen" dir={lang === 'ar' ? 'rtl' : 'ltr'}><div className="auth-orbit"><div/><div/><span>✦</span></div><form className="auth-card" onSubmit={submit}><div className="auth-tools"><LanguageSwitch lang={lang} setLang={setLang}/></div><div className="auth-brand"><Aperture size={34}/><span>EVERSTAR<small>MEMORIES BEYOND TIME</small></span></div><div className="eyebrow">YOUR PRIVATE UNIVERSE</div><h1>{title}</h1><p>{mode === 'signup' ? 'Create an account to keep your memories safe and in sync across devices.' : mode === 'forgot' ? 'We will send you a secure link to reset your password.' : mode === 'update' ? 'Choose a strong new password for your account.' : 'Sign in to revisit the moments you chose to keep.'}</p><label>Email address<input required type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" disabled={mode === 'update'}/></label>{mode !== 'forgot' && <label>{mode === 'update' ? 'New password' : 'Password'}<input required type="password" minLength={8} autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters"/></label>}{(mode === 'signup' || mode === 'update') && <label>Confirm password<input required type="password" minLength={8} autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="Repeat your password"/></label>}{error && <div className="auth-error"><AlertCircle size={15}/>{error}</div>}{message && <div className="auth-success"><CheckCircle2 size={15}/>{message}</div>}<button className="gold-btn full" type="submit" disabled={busy}>{busy ? 'Please wait…' : mode === 'signup' ? 'Create account' : mode === 'forgot' ? 'Send reset link' : mode === 'update' ? 'Save new password' : 'Sign in'} <ChevronRight size={16}/></button><div className="auth-links">{mode === 'login' && <><button type="button" onClick={() => setMode('forgot')}>Forgot password?</button><span>New here? <button type="button" onClick={() => { setMode('signup'); setMessage(''); setError(''); }}>Create account</button></span></>}{mode === 'signup' && <span>Already have an account? <button type="button" onClick={() => { setMode('login'); setMessage(''); setError(''); }}>Sign in</button></span>}{mode === 'forgot' && <button type="button" onClick={() => { setMode('login'); setMessage(''); setError(''); }}>Back to sign in</button>}{mode === 'update' && <button type="button" onClick={onDone}>Back to sign in</button>}</div></form></div></I18n>;
+  return <I18n lang={lang}><div className="auth-screen" dir={lang === 'ar' ? 'rtl' : 'ltr'}><div className="auth-orbit"><div/><div/><span>✦</span></div><form className="auth-card" onSubmit={submit}><div className="auth-tools"><LanguageSwitch lang={lang} setLang={setLang}/></div><div className="auth-brand"><Aperture size={34}/><span>EVERSTAR<small>MEMORIES BEYOND TIME</small></span></div><div className="eyebrow">YOUR PRIVATE UNIVERSE</div><h1>{title}</h1><p>{mode === 'signup' ? 'Create an account to keep your memories safe and in sync across devices.' : mode === 'forgot' ? 'We will send you a secure link to reset your password.' : mode === 'update' ? 'Choose a strong new password for your account.' : 'Sign in to revisit the moments you chose to keep.'}</p><label>Email address<input required type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" disabled={mode === 'update'}/></label>{mode !== 'forgot' && <label>{mode === 'update' ? 'New password' : 'Password'}<input required type="password" minLength={8} autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters"/></label>}{(mode === 'signup' || mode === 'update') && <label>Confirm password<input required type="password" minLength={8} autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="Repeat your password"/></label>}{error && <div className="auth-error"><AlertCircle size={15}/>{error}</div>}{message && <div className="auth-success"><CheckCircle2 size={15}/>{message}</div>}<button className="gold-btn full" type="submit" disabled={busy}>{busy ? 'Please wait…' : mode === 'signup' ? 'Create account' : mode === 'forgot' ? 'Send reset link' : mode === 'update' ? 'Save new password' : 'Sign in'} <ChevronRight size={16}/></button><div className="auth-links">{mode === 'login' && <><button type="button" onClick={() => setMode('forgot')}>Forgot password?</button>{signupAllowed && <span>New here? <button type="button" onClick={() => { setMode('signup'); setMessage(''); setError(''); }}>Create account</button></span>}</>}{mode === 'signup' && <span>Already have an account? <button type="button" onClick={() => { setMode('login'); setMessage(''); setError(''); }}>Sign in</button></span>}{mode === 'forgot' && <button type="button" onClick={() => { setMode('login'); setMessage(''); setError(''); }}>Back to sign in</button>}{mode === 'update' && <button type="button" onClick={onDone}>Back to sign in</button>}</div></form></div></I18n>;
 }
 function Stat({ icon, value, label, variant = '' }) { return <div className="stat"><span className={'stat-icon ' + variant}>{icon}</span><div><strong>{value}</strong><small>{tx(label)}</small></div></div>; }
 function PageHead({ eyebrow, title, desc, action }) { return <div className="page-head"><div><div className="eyebrow">{tx(eyebrow)}</div><h1>{tx(title)}</h1><p>{tx(desc)}</p></div>{action && <button className="gold-btn" onClick={action}><Plus size={16}/> {tx('New memory')}</button>}</div>; }
